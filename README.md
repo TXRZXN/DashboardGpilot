@@ -4,9 +4,7 @@
 
 ---
 
-## 🚀 Tech Stack
-
-| หมวด | เทคโนโลยี |
+| Category | Technology |
 |------|-----------|
 | Framework | Next.js 16 (App Router + Turbopack) |
 | Language | TypeScript 5 (Strict Mode) |
@@ -14,6 +12,9 @@
 | Charts | @mui/x-charts v8 |
 | Data Grid | @mui/x-data-grid v8 |
 | Styling | Emotion + TailwindCSS v4 |
+| **Unit Testing** | **Vitest** |
+| **UI Testing** | **React Testing Library + happy-dom** |
+| **Coverage** | **v8 (@vitest/coverage-v8)** |
 
 ---
 
@@ -46,14 +47,72 @@ src/
 │   ├── services/               # Application Layer: Business logic + data fetching
 │   │   ├── account-service.ts
 │   │   └── trade-history-service.ts
+│   │   └── __tests__/          # Service Unit Tests
+│   ├── ui/                     # Shared reusable UI components
+│   │   ├── metric-card.tsx
+│   │   └── __tests__/          # Component UI Tests
 │   ├── types/                  # Domain Types (shared TypeScript interfaces)
-│   │   └── api.ts              # ServiceResponse<T>, AccountInfo, Deal, etc.
 │   ├── config/                 # Configuration (theme, etc.)
-│   └── ui/                     # Shared reusable UI components
+│   └── utils/                  # Utility Functions
+│       └── __tests__/          # Utils Unit Tests
 │
+├── tests/                      # Global Test Setup & Mocks
 ├── layouts/                    # Shared layout components (Sidebar, Header)
 └── proxy.ts                    # Next.js Middleware (Auth guard / Gateway routing)
 ```
+
+---
+
+## 🧪 Testing Strategy
+
+ยึดตาม **Global Rule #6** โดยครอบคลุมทั้ง 3 ระดับ:
+
+- **Unit Tests:** สำหรับ Business Logic, Domain Logic และ Utility Functions (เครื่องมือ: Vitest)
+- **Integration Tests:** สำหรับ API Clients, Service Workers (เครื่องมือ: Vitest + Vitest Mocks)
+- **Component Tests:** สำหรับ UI Components (เครื่องมือ: React Testing Library + happy-dom)
+
+> [!IMPORTANT]
+> **เป้าหมาย Code Coverage:** ต้องพยายามรักษาให้อยู่ที่อย่างน้อย **80%** เพื่อความยั่งยืนของโปรเจกต์
+
+---
+
+## ⚙️ Getting Started
+
+### 0. Prerequisites
+
+- **Node.js:** เวอร์ชั่น 18.x ขึ้นไป (แนะนำ **v22.19.0** — มีไฟล์ `.nvmrc` ให้)
+- **NPM:** เวอร์ชั่น 10.x ขึ้นไป
+
+### 1. ติดตั้ง dependencies
+
+```bash
+npm install
+```
+
+### 2. ตั้งค่า Environment Variables
+
+คัดลอกไฟล์ต้นแบบและปรับแต่งค่าตามต้องการ:
+
+```bash
+cp .env.example .env.local
+```
+
+| Variable | คำอธิบาย |
+|----------|----------|
+| `NEXT_PUBLIC_API_URL` | URL ของ Backend API |
+| `NEXT_PUBLIC_IS_MOCK_MODE` | ตั้งเป็น `true` เพื่อใช้ข้อมูลจำลอง (แนะนำสำหรับการพัฒนา UI) |
+| `NEXT_PUBLIC_API_KEY` | (Optional) สำหรับการดึงข้อมูลจาก MT5 ที่ต้องใช้ Key |
+
+### 3. คำสั่งที่สำคัญ (Scripts)
+
+| คำสั่ง | คำอธิบาย |
+|---------|-----------|
+| `npm run dev` | รัน Development Server (Turbopack) |
+| `npm run build` | บิลด์สำหรับ Production |
+| `npm run test` | รันการทดสอบ (Watch Mode) |
+| `npm run test:run` | รันการทดสอบครั้งเดียว |
+| `npm run test:coverage` | ตรวจสอบ Code Coverage |
+| `npm run lint` | ตรวจสอบ Code Quality (ESLint) |
 
 ---
 
@@ -69,34 +128,6 @@ User visits /dashboard
 ```
 
 ---
-
-## ⚙️ Getting Started
-
-### 1. ติดตั้ง dependencies
-
-```bash
-pnpm install
-```
-
-### 2. ตั้งค่า Environment Variables
-
-สร้างไฟล์ `.env.local`:
-
-```env
-# URL ของ Backend API
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# เปิด Mock Mode เพื่อพัฒนา UI โดยไม่ต้องเชื่อมต่อ Backend จริง
-NEXT_PUBLIC_IS_MOCK_MODE=true
-```
-
-### 3. รัน Development Server
-
-```bash
-pnpm dev
-```
-
-เปิดเบราว์เซอร์ที่ [http://localhost:3000](http://localhost:3000)
 
 ---
 
