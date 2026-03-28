@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "data": {
+    "login": 2121978453,
+    "server": "StrikeProfx-Server",
+    "name": "Panupong Kaewsakulnee",
+    "currency": "USD",
+    "balance": 299470.61,
+    "equity": 299470.61,
+    "margin": 0,
+    "margin_free": 299470.61,
+    "margin_level": 0,
+    "leverage": 500,
+    "profit": 0
+  },
+  "error": null
+}

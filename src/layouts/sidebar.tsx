@@ -73,7 +73,7 @@ export function Sidebar() {
                   letterSpacing: "-0.01em",
                 }}
               >
-                Precision
+              GPilotDashboard
               </Typography>
               <Typography
                 variant="caption"
@@ -85,6 +85,7 @@ export function Sidebar() {
           </Box>
           <IconButton
             onClick={toggleTheme}
+            aria-label="Toggle brightness mode"
             sx={{
               bgcolor: mode === "dark" ? "rgba(148, 163, 184, 0.1)" : "rgba(15, 23, 42, 0.05)",
               "&:hover": {
@@ -109,6 +110,7 @@ export function Sidebar() {
               <ListItemButton
                 component={Link}
                 href={item.href}
+                aria-label={`Navigate to ${item.label}`}
                 sx={{
                   borderRadius: 2,
                   py: 1.5,

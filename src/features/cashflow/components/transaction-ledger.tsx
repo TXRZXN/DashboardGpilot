@@ -1,6 +1,23 @@
 "use client";
 
-import { Card, CardContent, Box, Typography, Paper, Chip, Skeleton } from "@mui/material";
+import { useState } from "react";
+import { 
+  Card, 
+  CardContent, 
+  Box, 
+  Typography, 
+  Chip, 
+  Skeleton, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  TablePagination,
+  Paper,
+  Avatar
+} from "@mui/material";
 import { 
   CallReceived as CallReceivedIcon, 
   CallMade as CallMadeIcon, 
@@ -22,131 +39,165 @@ const statusConfig = {
 };
 
 export function TransactionLedger({ loading, transactions }: Readonly<TransactionLedgerProps>) {
+  const [page, setPage] = useState(0);
+  const rowsPerPage = 10;
+
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
   if (loading) {
     return (
       <Card>
         <CardContent sx={{ p: { xs: 2, lg: 3 } }}>
           <Skeleton variant="text" width="30%" height={24} sx={{ mb: 2 }} />
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rectangular" height={70} sx={{ mb: 1, borderRadius: 2 }} />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} variant="rectangular" height={52} sx={{ mb: 1, borderRadius: 1 }} />
           ))}
         </CardContent>
       </Card>
     );
   }
 
+  const paginatedTransactions = transactions.slice(
+    page * rowsPerPage,
+    (page + 1) * rowsPerPage
+  );
+
   return (
-    <Card>
-      <CardContent sx={{ p: { xs: 2, lg: 3 } }}>
-        <Box sx={{ mb: 2 }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ p: { xs: 2, lg: 3 }, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ mb: 3 }}>
           <Typography
             variant="subtitle1"
-            sx={{ fontWeight: 600, color: "text.primary" }}
+            sx={{ fontWeight: 700, color: "text.primary", fontSize: '1.1rem' }}
           >
             Transaction Ledger
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Recent deposits and withdrawals
+            Complete history of deposits, withdrawals and transfers
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {transactions.map((tx) => {
-            const status = statusConfig[tx.status as keyof typeof statusConfig];
-            const StatusIcon = status.icon;
 
-            return (
-              <Paper
-                key={tx.id}
-                sx={{
-                  p: 1.5,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark"
-                      ? "rgba(148, 163, 184, 0.05)"
-                      : "rgba(15, 23, 42, 0.02)",
-                  border: (theme) =>
-                    theme.palette.mode === "dark"
-                      ? "1px solid rgba(148, 163, 184, 0.08)"
-                      : "1px solid rgba(15, 23, 42, 0.05)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: { xs: "wrap", sm: "nowrap" },
-                  gap: 1,
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 2,
-                      bgcolor:
-                        tx.type === "deposit"
-                          ? "rgba(16, 185, 129, 0.2)"
-                          : "rgba(239, 68, 68, 0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+        <TableContainer component={Paper} elevation={0} sx={{ 
+          bgcolor: 'transparent',
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 2,
+          overflowX: 'auto'
+        }}>
+          <Table sx={{ minWidth: 650 }} aria-label="transaction ledger table">
+            <TableHead>
+              <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
+                <TableCell sx={{ fontWeight: 600, py: 2 }}>Type</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Method</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Amount</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedTransactions.map((tx) => {
+                const statusKey = tx.status.toLowerCase() as keyof typeof statusConfig;
+                const status = statusConfig[statusKey] || statusConfig.completed;
+                const StatusIcon = status.icon;
+
+                return (
+                  <TableRow
+                    key={tx.id}
+                    hover
+                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                   >
-                    {tx.type === "deposit" ? (
-                      <CallReceivedIcon sx={{ fontSize: 20, color: "success.main" }} />
-                    ) : (
-                      <CallMadeIcon sx={{ fontSize: 20, color: "error.main" }} />
-                    )}
-                  </Box>
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontWeight: 500,
-                        color: "text.primary",
-                        textTransform: "capitalize",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      {tx.type}
+                    <TableCell sx={{ py: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            bgcolor: 
+                              tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal" ? "rgba(239, 68, 68, 0.15)" :
+                              tx.type.toLowerCase() === "deposit" ? "rgba(16, 185, 129, 0.15)" : 
+                              "rgba(255, 255, 255, 0.15)", // Fallback
+                            color: 
+                              tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal" ? "error.main" :
+                              tx.type.toLowerCase() === "deposit" ? "success.main" : 
+                              "text.primary",
+                          }}
+                        >
+                          {tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal" ? (
+                            <CallMadeIcon sx={{ fontSize: 18 }} />
+                          ) : (
+                            <CallReceivedIcon sx={{ fontSize: 18 }} />
+                          )}
+                        </Avatar>
+                        <Typography sx={{ fontWeight: 500, fontSize: '0.875rem' }}>
+                          {tx.type === "ProfitSharing" ? "Profit Sharing" : tx.type}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.875rem' }}>{tx.method}</TableCell>
+                    <TableCell sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>{tx.date}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                        <Typography
+                        component="span"
+                        sx={{
+                          fontWeight: 600,
+                          color: tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal" ? "error.main" : "success.main",
+                          fontSize: 'inherit'
+                        }}
+                      >
+                        {tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal" ? "-" : "+"}${tx.amount.toLocaleString()}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={<StatusIcon sx={{ fontSize: 14, color: `${status.color} !important` }} />}
+                        label={tx.status}
+                        size="small"
+                        sx={{
+                          bgcolor: status.bgColor,
+                          color: status.color,
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          textTransform: "capitalize",
+                          borderRadius: '6px',
+                          border: `1px solid ${status.color}20`,
+                          "& .MuiChip-icon": {
+                            ml: 0.5,
+                          },
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {paginatedTransactions.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No transactions found
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      {tx.method}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "text.secondary", display: { xs: "none", sm: "block" } }}
-                >
-                  {tx.date}
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: '"Inter", monospace',
-                      fontWeight: 500,
-                      color: tx.type === "deposit" ? "success.main" : "text.primary",
-                    }}
-                  >
-                    {tx.type === "deposit" ? "+" : "-"}${tx.amount.toLocaleString()}
-                  </Typography>
-                  <Chip
-                    icon={<StatusIcon sx={{ fontSize: 14, color: `${status.color} !important` }} />}
-                    label={tx.status}
-                    size="small"
-                    sx={{
-                      bgcolor: status.bgColor,
-                      color: status.color,
-                      fontWeight: 500,
-                      fontSize: "0.7rem",
-                      textTransform: "capitalize",
-                      "& .MuiChip-icon": {
-                        ml: 0.5,
-                      },
-                    }}
-                  />
-                </Box>
-              </Paper>
-            );
-          })}
-        </Box>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <TablePagination
+          rowsPerPageOptions={[10]}
+          component="div"
+          count={transactions.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          sx={{
+            borderTop: 'none',
+            '.MuiTablePagination-toolbar': {
+              minHeight: 52,
+            }
+          }}
+        />
       </CardContent>
     </Card>
   );

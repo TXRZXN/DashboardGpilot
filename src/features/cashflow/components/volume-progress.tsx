@@ -1,25 +1,39 @@
 "use client";
 
-import { Card, CardContent, Box, Typography, LinearProgress, CircularProgress, Skeleton } from "@mui/material";
+import { Card, CardContent, Box, Typography, LinearProgress, CircularProgress, Skeleton, Tooltip, IconButton } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 interface VolumeProgressProps {
+  readonly currentVolume: number;
+  readonly targetVolume: number;
+  readonly tradeCount: number;
   readonly loading?: boolean;
 }
 
-export function VolumeProgress({ loading }: Readonly<VolumeProgressProps>) {
+export function VolumeProgress({ currentVolume, targetVolume, tradeCount, loading }: Readonly<VolumeProgressProps>) {
+  const percentage = targetVolume > 0 ? Math.min(100, Math.round((currentVolume / targetVolume) * 100)) : 0;
+  const tradeGoal = 500; // สมมติเป้าหมายจำนวนเทรด
+  const tradePercentage = Math.min(100, Math.round((tradeCount / tradeGoal) * 100));
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: { xs: 2, lg: 3 } }}>
         <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 600, color: "text.primary" }}
-          >
-            Volume Quotient
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Monthly trading activity vs goal
-          </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 600, color: "text.primary" }}
+              >
+                Volume Quotient
+              </Typography>
+              <Tooltip title="อัตราส่วนความเข้มข้นของการเทรด วัดจากปริมาณ Lot รวมเทียบกับเป้าหมายตามสัดส่วน Equity" arrow>
+                <IconButton size="small" sx={{ p: 0, color: "text.secondary" }}>
+                  <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Trading activity vs equity-based goal
+            </Typography>
         </Box>
 
         <Box sx={{ display: "flex", justifyContent: "center", mb: 4, position: "relative" }}>
@@ -36,7 +50,7 @@ export function VolumeProgress({ loading }: Readonly<VolumeProgressProps>) {
               />
               <CircularProgress
                 variant="determinate"
-                value={78}
+                value={percentage}
                 size={140}
                 thickness={4}
                 sx={{
@@ -60,7 +74,7 @@ export function VolumeProgress({ loading }: Readonly<VolumeProgressProps>) {
                 }}
               >
                 <Typography variant="h4" sx={{ fontWeight: 700, color: "text.primary" }}>
-                  78%
+                  {percentage}%
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   of goal
@@ -84,12 +98,12 @@ export function VolumeProgress({ loading }: Readonly<VolumeProgressProps>) {
                     Standard Lots
                   </Typography>
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                    156.4 / 200
+                    {currentVolume.toFixed(1)} / {targetVolume}
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
-                  value={78}
+                  value={percentage}
                   sx={{
                     height: 6,
                     borderRadius: 3,
@@ -103,12 +117,12 @@ export function VolumeProgress({ loading }: Readonly<VolumeProgressProps>) {
                     Trade Count
                   </Typography>
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                    412 / 500
+                    {tradeCount} / {tradeGoal}
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
-                  value={82}
+                  value={tradePercentage}
                   sx={{
                     height: 6,
                     borderRadius: 3,

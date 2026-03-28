@@ -1,66 +1,115 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { TradeHistoryService } from "@/shared/services/trade-history-service";
+import { isProfitSharing, calculateEquityCurve, getGroupedTrades } from "@/features/analytics/utils/performance-utils";
+import type { Deal } from "@/shared/types/api";
+import { useApiHealth } from "@/shared/providers/api-health-provider";
 
 export interface Transaction {
   id: number;
-  type: "deposit" | "withdraw";
-  amount: number;
-  status: "completed" | "pending" | "failed";
   date: string;
+  type: string;
+  amount: number;
+  balance: number;
+  status: string;
   method: string;
 }
 
-export interface FlowItem {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon: any;
-  iconBg: string;
-  iconColorKey: string;
-  valueColorKey: string;
-}
-
 export function useCashflowData() {
+  const { isHealthy, isChecking } = useApiHealth();
   const [loading, setLoading] = useState(true);
-  
-  // Mock data moved here for now as per "ไม่่ต้อง" (no automatic mapping yet)
-  const transactions: Transaction[] = [
-    { id: 1, type: "deposit", amount: 5000, status: "completed", date: "Dec 15, 2024", method: "Bank Transfer" },
-    { id: 2, type: "withdraw", amount: 2500, status: "completed", date: "Dec 12, 2024", method: "Wire Transfer" },
-    { id: 3, type: "deposit", amount: 3000, status: "completed", date: "Dec 08, 2024", method: "Credit Card" },
-    { id: 4, type: "withdraw", amount: 1500, status: "pending", date: "Dec 05, 2024", method: "Wire Transfer" },
-    { id: 5, type: "deposit", amount: 10000, status: "completed", date: "Dec 01, 2024", method: "Bank Transfer" },
-    { id: 6, type: "deposit", amount: 2000, status: "failed", date: "Nov 28, 2024", method: "Credit Card" },
-  ];
+  const [deals, setDeals] = useState<readonly Deal[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const balanceData = [
-    { date: "Week 1", balance: 28500 },
-    { date: "Week 2", balance: 29200 },
-    { date: "Week 3", balance: 30100 },
-    { date: "Week 4", balance: 29800 },
-    { date: "Week 5", balance: 31500 },
-    { date: "Week 6", balance: 32200 },
-    { date: "Week 7", balance: 31800 },
-    { date: "Week 8", balance: 33500 },
-    { date: "Week 9", balance: 34200 },
-    { date: "Week 10", balance: 33800 },
-    { date: "Week 11", balance: 35100 },
-    { date: "Week 12", balance: 35842 },
-  ];
-
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timer);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await TradeHistoryService.getHistory();
+      if (response.success && response.data) {
+        setDeals(Array.isArray(response.data.data) ? response.data.data : []);
+      } else if (!response.success) {
+        setError(typeof response.error === 'string' ? response.error : 'Failed to fetch cashflow data');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  // 1. Initial Fetch
+  useEffect(() => {
+    if (isHealthy) {
+      fetchData();
+    }
+  }, [isHealthy, fetchData]);
+
+  // 2. Auto-retry if empty (ทุกๆ 5 วินาที)
+  useEffect(() => {
+    if (!isHealthy || deals.length > 0) return;
+
+    const timer = setInterval(() => {
+      if (!loading) {
+        fetchData();
+      }
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [isHealthy, deals.length, loading, fetchData]);
+
+  const isGlobalLoading = !isHealthy || loading || isChecking;
+
+  const transactions = useMemo<Transaction[]>(() => {
+    return deals
+      .filter((d) => d.type === "BALANCE")
+      .map((d, index) => {
+        const isPF = d.comment.startsWith("-PF");
+        return {
+          id: d.ticket || index,
+          date: d.time.split("T")[0],
+          type: isPF ? "ProfitSharing" : (d.profit >= 0 ? "Deposit" : "Withdrawal"),
+          amount: d.profit,
+          balance: 0,
+          status: "Completed",
+          method: d.comment || "MT5 Internal",
+        };
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [deals]);
+
+  const currentBalance = useMemo(() => 
+    deals.reduce((sum: number, d: Deal) => sum + (d.profit + (d.commission || 0) + (d.swap || 0)), 0), 
+  [deals]);
+
+  const balanceData = useMemo(() => 
+    calculateEquityCurve(deals).map((point: any) => ({
+      date: new Date(point.time).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
+      time: point.time, // ISO
+      balance: point.equity
+    })), [deals]);
+
+  const volumeStats = useMemo(() => {
+    const groupedTrades = getGroupedTrades(deals).filter((d: Deal) => !!d.symbol);
+    const totalVolume = groupedTrades.reduce((sum: number, t: Deal) => sum + t.volume, 0);
+    const totalTrades = groupedTrades.length;
+    const targetVolume = Math.max(10, Math.round((currentBalance || 10000) / 100));
+
+    return {
+      currentVolume: totalVolume,
+      targetVolume: targetVolume,
+      tradeCount: totalTrades
+    };
+  }, [deals, currentBalance]);
+
   return {
-    loading,
+    loading: isGlobalLoading,
+    error,
     transactions,
     balanceData,
-    currentBalance: 35842.5,
-    balanceChange: 7342.5,
-    balanceChangePercent: 25.8,
+    volumeStats,
+    currentBalance,
+    balanceChange: 0, 
+    balanceChangePercent: 0,
   };
 }

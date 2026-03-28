@@ -1,6 +1,7 @@
 "use client";
 
-import { Card, CardContent, Box, Typography } from "@mui/material";
+import { Card, CardContent, Box, Typography, Tooltip, IconButton } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useTheme } from "@mui/material/styles";
 
 interface MarginGaugeProps {
@@ -11,39 +12,56 @@ interface MarginGaugeProps {
 
 export function MarginGauge({ value = 0, max = 100, loading }: Readonly<MarginGaugeProps>) {
   const theme = useTheme();
-  const percentage = (value / max) * 100;
+  
+  // ป้องกันค่าติดลบหรือเกิน 100
+  const safeValue = Math.max(0, Math.min(max, value));
+  const percentage = max > 0 ? (safeValue / max) * 100 : 0;
   const circumference = 2 * Math.PI * 70;
   const strokeDashoffset = circumference - (percentage / 100) * circumference * 0.75;
 
-  const getRiskLevel = (pct: number) => {
-    if (pct < 30) return { label: "Low Risk", color: theme.palette.success.main };
-    if (pct < 60) return { label: "Moderate", color: theme.palette.primary.main };
-    if (pct < 80) return { label: "Elevated", color: theme.palette.warning.main };
-    return { label: "High Risk", color: theme.palette.error.main };
+  const getHealthStatus = (pct: number) => {
+    if (pct >= 80) return { label: "Excellent", color: theme.palette.success.main };
+    if (pct >= 60) return { label: "Good", color: theme.palette.primary.main };
+    if (pct >= 40) return { label: "Moderate", color: theme.palette.warning.main };
+    return { label: "Weak", color: theme.palette.error.main };
   };
 
-  const risk = getRiskLevel(percentage);
+  const health = getHealthStatus(percentage);
 
-  const riskLevels = [
-    { range: "0-30%", color: theme.palette.success.main },
-    { range: "30-60%", color: theme.palette.primary.main },
-    { range: "60-80%", color: theme.palette.warning.main },
-    { range: "80-100%", color: theme.palette.error.main },
+  const healthLevels = [
+    { range: "0-40%", color: theme.palette.error.main, label: "Weak" },
+    { range: "40-60%", color: theme.palette.warning.main, label: "Mod" },
+    { range: "60-80%", color: theme.palette.primary.main, label: "Good" },
+    { range: "80-100%", color: theme.palette.success.main, label: "Exc" },
   ];
 
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: { xs: 2, lg: 3 } }}>
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.primary" }}>
-            Margin Risk Level
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.primary" }}>
+              Portfolio Health Index
+            </Typography>
+            <Tooltip title="ดัชนีชี้วัดสุขภาพพอร์ตองค์รวม คำนวณถ่วงน้ำหนักจาก Win Rate (40%), Profit Factor (40%) และ Drawdown Control (20%)" arrow>
+              <IconButton size="small" sx={{ p: 0, color: "text.secondary" }}>
+                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Current margin utilization
+            Overall performance and viability score
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <Box 
+          sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+          role="progressbar"
+          aria-valuenow={Math.round(value)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Portfolio Health Score Index"
+        >
           <Box sx={{ position: "relative", width: 192, height: 144 }}>
             <svg width="100%" height="100%" viewBox="0 0 160 100">
               <path
@@ -57,7 +75,7 @@ export function MarginGauge({ value = 0, max = 100, loading }: Readonly<MarginGa
                 <path
                   d="M 20 90 A 70 70 0 0 1 140 90"
                   fill="none"
-                  stroke={risk.color}
+                  stroke={health.color}
                   strokeWidth="12"
                   strokeLinecap="round"
                   strokeDasharray={circumference * 0.75}
@@ -74,18 +92,18 @@ export function MarginGauge({ value = 0, max = 100, loading }: Readonly<MarginGa
                 fontSize="24"
                 fontWeight="700"
               >
-                {loading ? "..." : `${value.toFixed(1)}%`}
+                {loading ? "..." : `${value.toFixed(0)}`}
               </text>
               <text
                 x="80"
                 y="90"
                 textAnchor="middle"
-                fill={loading ? theme.palette.text.secondary : risk.color}
+                fill={loading ? theme.palette.text.secondary : health.color}
                 fontFamily="Inter, sans-serif"
                 fontSize="11"
-                fontWeight="500"
+                fontWeight="600"
               >
-                {loading ? "Calculating..." : risk.label}
+                {loading ? "Calculating..." : health.label}
               </text>
             </svg>
           </Box>
@@ -100,19 +118,22 @@ export function MarginGauge({ value = 0, max = 100, loading }: Readonly<MarginGa
               textAlign: "center",
             }}
           >
-            {riskLevels.map((level) => (
+            {healthLevels.map((level) => (
               <Box key={level.range}>
                 <Box
                   sx={{
-                    width: 12,
-                    height: 12,
+                    width: 10,
+                    height: 10,
                     borderRadius: "50%",
                     bgcolor: level.color,
                     mx: "auto",
                     mb: 0.5,
                   }}
                 />
-                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.65rem" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6rem", display: 'block' }}>
+                  {level.label}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "0.55rem" }}>
                   {level.range}
                 </Typography>
               </Box>

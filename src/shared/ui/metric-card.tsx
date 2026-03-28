@@ -32,8 +32,8 @@ export function MetricCard({
   };
 
   return (
-    <Card>
-      <CardContent sx={{ p: { xs: 2, lg: 2.5 }, "&:last-child": { pb: { xs: 2, lg: 2.5 } } }}>
+    <Card sx={{ height: 115, display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ p: { xs: 2, lg: 2.5 }, flex: 1, "&:last-child": { pb: { xs: 2, lg: 2.5 } } }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <Box sx={{ flex: 1 }}>
             <Typography
@@ -51,7 +51,7 @@ export function MetricCard({
               variant="h6"
               sx={{
                 color: "text.primary",
-                fontFamily: '"Inter", monospace',
+                fontFamily: "var(--font-inter)",
                 fontWeight: 700,
                 fontSize: { xs: "1.1rem", lg: "1.35rem" },
                 letterSpacing: "-0.02em",

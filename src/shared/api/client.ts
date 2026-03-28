@@ -1,27 +1,44 @@
 import { ApiError } from './api-error';
+import { API_BASE_URL } from './endpoint';
 
 /**
  * apiClient (Client-side)
- * ใช้สำหรับการดึงข้อมูลฝั่ง Client โดยจะวิ่งผ่าน Next.js Gateway Proxy (`/api/gateway/`)
- * เพื่อลดปัญหา CORS และซ่อน Backend URL จริง
+ * ใช้สำหรับการดึงข้อมูลจาก Backend โดยตรง
  */
-export const apiClient = async <T>(endpoint: string, options?: RequestInit): Promise<T> => {
-  // Use proxy path when running on client side (e.g. /api/gateway/trade-history)
-  const url = `/api/gateway${endpoint}`;
+export const apiClient = async <T>(
+  endpoint: string, 
+  options?: RequestInit,
+  params?: Record<string, string | number | boolean | null | undefined>
+): Promise<T> => {
+  // สร้าง Query String จาก params
+  const queryString = params 
+    ? '?' + Object.entries(params)
+        .filter(([_, value]) => value !== null && value !== undefined)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+        .join('&')
+    : '';
+
+  const url = `${API_BASE_URL}${endpoint}${queryString}`;
 
   try {
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY ?? '',
         ...options?.headers,
       },
     });
 
     if (!response.ok) {
-      const errorMsg = await response.text().catch(() => response.statusText);
-      throw new ApiError(`API fetch error on ${endpoint}: ${errorMsg}`, response.status);
+      const errorData = await response.json().catch(() => ({}));
+      const errorMsg = errorData.error || errorData.detail || response.statusText;
+      
+      // ดักจับรูปแบบ Error พิเศษ (422, 503)
+      throw new ApiError(
+        typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg), 
+        response.status,
+        errorData
+      );
     }
 
     return response.json() as Promise<T>;

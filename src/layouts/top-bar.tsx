@@ -55,12 +55,13 @@ export function TopBar() {
               color: "text.primary",
             }}
           >
-            Precision
+            GPilotDashboard
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <IconButton
             onClick={toggleTheme}
+            aria-label="Toggle brightness mode"
             sx={{
               color: "text.secondary",
             }}
@@ -71,22 +72,7 @@ export function TopBar() {
               <DarkModeIcon sx={{ color: "#64748B" }} />
             )}
           </IconButton>
-          <IconButton sx={{ color: "text.secondary" }}>
-            <NotificationsIcon />
-          </IconButton>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            sx={{
-              bgcolor: "primary.main",
-              color: mode === "dark" ? "#0F172A" : "#FFFFFF",
-              fontWeight: 500,
-              "&:hover": { bgcolor: "primary.dark" },
-            }}
-          >
-            Deposit
-          </Button>
+
         </Box>
       </Toolbar>
     </AppBar>

@@ -56,7 +56,7 @@ export function SymbolPerformance({ loading, stats }: Readonly<SymbolPerformance
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography
                 sx={{
-                  fontFamily: '"Inter", monospace',
+                  fontFamily: "var(--font-inter)",
                   fontWeight: 500,
                   fontSize: "0.875rem",
                   color: "text.primary",
@@ -74,7 +74,7 @@ export function SymbolPerformance({ loading, stats }: Readonly<SymbolPerformance
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Typography
                 sx={{
-                  fontFamily: '"Inter", monospace',
+                  fontFamily: "var(--font-inter)",
                   fontSize: "0.875rem",
                   color: profitColor,
                 }}
@@ -83,7 +83,7 @@ export function SymbolPerformance({ loading, stats }: Readonly<SymbolPerformance
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: '"Inter", monospace',
+                  fontFamily: "var(--font-inter)",
                   fontSize: "0.875rem",
                   color: "primary.main",
                   fontWeight: 500,
@@ -115,8 +115,8 @@ export function SymbolPerformance({ loading, stats }: Readonly<SymbolPerformance
   };
 
   return (
-    <Card sx={{ height: "100%" }}>
-      <CardContent sx={{ p: { xs: 2, lg: 3 } }}>
+    <Card sx={{ height: "100%", display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ p: { xs: 2, lg: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ mb: 2 }}>
           <Typography
             variant="subtitle1"
@@ -128,7 +128,7 @@ export function SymbolPerformance({ loading, stats }: Readonly<SymbolPerformance
             Win rates by instrument (Top 5)
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minHeight: 150, overflow: 'auto' }}>
           {renderStats()}
         </Box>
       </CardContent>

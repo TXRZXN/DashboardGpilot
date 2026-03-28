@@ -1,14 +1,31 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Box, Typography, Grid, Skeleton, Alert } from "@mui/material";
-import {
-  DashboardLayout,
-  MetricCard,
-  EquityChart,
-  SymbolPerformance,
-  ExecutionLog
-} from "@/shared/ui";
+import { MetricCard } from "@/shared/ui/metric-card";
 import { useDashboardData } from "@/features/dashboard/hooks";
+
+// Dynamic imports using direct paths to avoid barrel file pollution (Critical Request Chains)
+const EquityChart = dynamic(() => import("@/shared/ui/equity-chart").then(mod => mod.EquityChart), {
+  loading: () => <Skeleton variant="rectangular" height={350} sx={{ borderRadius: 4, bgcolor: 'rgba(255,255,255,0.03)' }} />,
+  ssr: false,
+});
+
+const SymbolPerformance = dynamic(() => import("@/shared/ui/symbol-performance").then(mod => mod.SymbolPerformance), {
+  loading: () => <Skeleton variant="rectangular" height={340} sx={{ borderRadius: 4, bgcolor: 'rgba(255,255,255,0.03)' }} />,
+  ssr: false,
+});
+
+const ExecutionLog = dynamic(() => import("@/shared/ui/execution-log").then(mod => mod.ExecutionLog), {
+  loading: () => <Skeleton variant="rectangular" height={450} sx={{ borderRadius: 4, bgcolor: 'rgba(255,255,255,0.03)' }} />,
+  ssr: false,
+});
+
+const VolumeProgress = dynamic(() => import("@/features/cashflow/components/volume-progress").then(mod => mod.VolumeProgress), {
+  loading: () => <Skeleton variant="rectangular" height={250} sx={{ borderRadius: 4, bgcolor: 'rgba(255,255,255,0.03)' }} />,
+  ssr: false,
+});
+
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
@@ -24,6 +41,7 @@ export default function DashboardPage() {
     deals,
     equityData,
     symbolStats,
+    volumeStats,
     formatCurrency,
   } = useDashboardData();
 
@@ -92,67 +110,75 @@ export default function DashboardPage() {
   ];
 
   return (
-    <DashboardLayout>
-      <Box sx={{ p: { xs: 2, lg: 3 }, flex: 1 }}>
-        <Box sx={{ mb: { xs: 2, lg: 3 } }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontFamily: '"Manrope", sans-serif',
-              fontWeight: 700,
-              color: "text.primary",
-              fontSize: { xs: "1.25rem", lg: "1.5rem" },
-            }}
-          >
-            Trading Dashboard
-          </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            {loading ? (
-              <Skeleton width={150} height={20} />
-            ) : (
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Account: {account?.login} ({account?.name}) - {account?.server}
-              </Typography>
-            )}
-          </Box>
+    <Box sx={{ p: { xs: 2, lg: 3 }, flex: 1 }}>
+      <Box sx={{ mb: { xs: 2, lg: 3 } }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontFamily: '"Manrope", sans-serif',
+            fontWeight: 700,
+            color: "text.primary",
+            fontSize: { xs: "1.25rem", lg: "1.5rem" },
+          }}
+        >
+          Trading Dashboard
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {loading ? (
+            <Skeleton width={150} height={20} />
+          ) : (
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Account: {account?.login} ({account?.name}) - {account?.server}
+            </Typography>
+          )}
         </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Grid container spacing={{ xs: 1.5, lg: 2 }} sx={{ mb: { xs: 2, lg: 3 } }}>
-          {metrics.map((metric) => (
-            <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 2 }} key={metric.title}>
-              {loading ? (
-                <Skeleton variant="rectangular" height={100} sx={{ borderRadius: 2 }} />
-              ) : (
-                <MetricCard
-                  title={metric.title}
-                  value={metric.value}
-                  change={metric.change}
-                  changeType={metric.changeType}
-                  icon={metric.icon}
-                  iconColor={metric.iconColor}
-                />
-              )}
-            </Grid>
-          ))}
-        </Grid>
-
-        <Grid container spacing={{ xs: 2, lg: 3 }} sx={{ mb: { xs: 2, lg: 3 } }}>
-          <Grid size={{ xs: 12, lg: 8 }}>
-            <EquityChart loading={loading} data={equityData} />
-          </Grid>
-          <Grid size={{ xs: 12, lg: 4 }}>
-            <SymbolPerformance loading={loading} stats={symbolStats} />
-          </Grid>
-        </Grid>
-
-        <ExecutionLog loading={loading} deals={deals} />
       </Box>
-    </DashboardLayout>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Grid container spacing={{ xs: 1.5, lg: 2 }} sx={{ mb: { xs: 2, lg: 3 } }}>
+        {metrics.map((metric) => (
+          <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 2 }} key={metric.title}>
+            {loading ? (
+              <Skeleton variant="rectangular" height={115} sx={{ borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)' }} />
+            ) : (
+              <MetricCard
+                title={metric.title}
+                value={metric.value}
+                change={metric.change}
+                changeType={metric.changeType}
+                icon={metric.icon}
+                iconColor={metric.iconColor}
+              />
+            )}
+          </Grid>
+        ))}
+      </Grid>
+
+      <Grid container spacing={{ xs: 2, lg: 3 }} sx={{ mb: { xs: 2, lg: 3 } }}>
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <EquityChart loading={loading} data={equityData} title="Account Growth" />
+        </Grid>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          
+            <VolumeProgress 
+              loading={loading} 
+              currentVolume={volumeStats?.currentVolume || 0}
+              targetVolume={volumeStats?.targetVolume || 0}
+              tradeCount={volumeStats?.tradeCount || 0}
+            />
+        
+        </Grid>
+      </Grid>
+      <Box sx={{ mb: { xs: 2, lg: 3 } }}>
+        <SymbolPerformance loading={loading} stats={symbolStats} />
+      </Box>
+      
+      <ExecutionLog loading={loading} deals={deals} />
+    </Box>
   );
 }

@@ -18,14 +18,23 @@ import {
   TableRow, 
   TableSortLabel, 
   Grid, 
-  CircularProgress 
+  CircularProgress,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Collapse,
+  Button,
+  Stack
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTheme } from "@mui/material/styles";
+import { useState } from "react";
 import type { Deal } from "@/shared/types/api";
 import type { SortField, SortDirection, HistoryTotals } from "../hooks/use-history-data";
 
@@ -38,6 +47,23 @@ interface TradeTableProps {
   readonly sortField: SortField;
   readonly sortDirection: SortDirection;
   readonly onSort: (field: SortField) => void;
+  
+  // Advanced Filters
+  readonly typeFilter: "ALL" | "BUY" | "SELL";
+  readonly onTypeFilterChange: (value: "ALL" | "BUY" | "SELL") => void;
+  readonly startDate: string;
+  readonly onStartDateChange: (value: string) => void;
+  readonly endDate: string;
+  readonly onEndDateChange: (value: string) => void;
+  readonly minProfit: string;
+  readonly onMinProfitChange: (value: string) => void;
+  readonly maxProfit: string;
+  readonly onMaxProfitChange: (value: string) => void;
+  readonly minVolume: string;
+  readonly onMinVolumeChange: (value: string) => void;
+  readonly maxVolume: string;
+  readonly onMaxVolumeChange: (value: string) => void;
+
   readonly filteredCount: number;
 }
 
@@ -50,10 +76,28 @@ export function TradeTable({
   sortField,
   sortDirection,
   onSort,
+
+  // Advanced Filters
+  typeFilter,
+  onTypeFilterChange,
+  startDate,
+  onStartDateChange,
+  endDate,
+  onEndDateChange,
+  minProfit,
+  onMinProfitChange,
+  maxProfit,
+  onMaxProfitChange,
+  minVolume,
+  onMinVolumeChange,
+  maxVolume,
+  onMaxVolumeChange,
+
   filteredCount,
 }: Readonly<TradeTableProps>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
+  const [showFilters, setShowFilters] = useState(false);
 
   if (loading) {
     return (
@@ -62,6 +106,17 @@ export function TradeTable({
       </Box>
     );
   }
+
+  const handleResetFilters = () => {
+    onSearchChange("");
+    onTypeFilterChange("ALL");
+    onStartDateChange("");
+    onEndDateChange("");
+    onMinProfitChange("");
+    onMaxProfitChange("");
+    onMinVolumeChange("");
+    onMaxVolumeChange("");
+  };
 
   return (
     <Card>
@@ -87,7 +142,7 @@ export function TradeTable({
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <TextField
               size="small"
-              placeholder="Search ticket or symbol..."
+              placeholder="Search position or symbol..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               slotProps={{
@@ -107,16 +162,16 @@ export function TradeTable({
                   "& fieldset": {
                     borderColor: isDark ? "rgba(148, 163, 184, 0.1)" : "rgba(15, 23, 42, 0.1)",
                   },
-                  "&:hover fieldset": {
-                    borderColor: isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(15, 23, 42, 0.2)",
-                  },
                 },
               }}
             />
             <IconButton
+              onClick={() => setShowFilters(!showFilters)}
+              color={showFilters ? "primary" : "default"}
               sx={{
                 border: isDark ? "1px solid rgba(148, 163, 184, 0.1)" : "1px solid rgba(15, 23, 42, 0.1)",
                 borderRadius: 2,
+                bgcolor: showFilters ? theme.palette.primary.main + "10" : "transparent"
               }}
             >
               <FilterListIcon sx={{ fontSize: 18 }} />
@@ -124,17 +179,138 @@ export function TradeTable({
           </Box>
         </Box>
 
+        <Collapse in={showFilters}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2, 
+              mb: 3, 
+              bgcolor: isDark ? "rgba(148, 163, 184, 0.03)" : "rgba(15, 23, 42, 0.01)",
+              border: `1px solid ${theme.palette.divider}`,
+              borderRadius: 2
+            }}
+          >
+            <Grid container spacing={2}>
+              {/* Type Filter */}
+              <Grid size={{ xs: 12, sm: 4, md: 2 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Type</InputLabel>
+                  <Select
+                    value={typeFilter}
+                    label="Type"
+                    onChange={(e) => onTypeFilterChange(e.target.value as any)}
+                  >
+                    <MenuItem value="ALL">All Types</MenuItem>
+                    <MenuItem value="BUY">BUY</MenuItem>
+                    <MenuItem value="SELL">SELL</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Date Filters */}
+              <Grid size={{ xs: 12, sm: 4, md: 2 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Start Date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => onStartDateChange(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4, md: 2 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="End Date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => onEndDateChange(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              {/* Profit Range */}
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Min Profit"
+                    type="number"
+                    value={minProfit}
+                    onChange={(e) => onMinProfitChange(e.target.value)}
+                  />
+                  <Typography variant="caption">-</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Max Profit"
+                    type="number"
+                    value={maxProfit}
+                    onChange={(e) => onMaxProfitChange(e.target.value)}
+                  />
+                </Stack>
+              </Grid>
+
+              {/* Volume Range */}
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Min Vol"
+                    type="number"
+                    value={minVolume}
+                    onChange={(e) => onMinVolumeChange(e.target.value)}
+                  />
+                  <Typography variant="caption">-</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Max Vol"
+                    type="number"
+                    value={maxVolume}
+                    onChange={(e) => onMaxVolumeChange(e.target.value)}
+                  />
+                </Stack>
+              </Grid>
+
+              <Grid size={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button 
+                  size="small" 
+                  startIcon={<RefreshIcon />}
+                  onClick={handleResetFilters}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Reset Filters
+                </Button>
+              </Grid>
+            </Grid>
+          </Paper>
+        </Collapse>
+
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
                   <TableSortLabel
-                    active={sortField === "ticket"}
-                    direction={sortField === "ticket" ? sortDirection : "asc"}
-                    onClick={() => onSort("ticket")}
+                    active={sortField === "position"}
+                    direction={sortField === "position" ? sortDirection : "asc"}
+                    onClick={() => onSort("position")}
                   >
-                    Ticket
+                    Position
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
+                  <TableSortLabel
+                    active={sortField === "time"}
+                    direction={sortField === "time" ? sortDirection : "asc"}
+                    onClick={() => onSort("time")}
+                  >
+                    Time
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
@@ -146,16 +322,22 @@ export function TradeTable({
                     Symbol
                   </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>Type</TableCell>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>Entry</TableCell>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider, display: { xs: "none", lg: "table-cell" } }}>Time</TableCell>
+                <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
+                  <TableSortLabel
+                    active={sortField === "type"}
+                    direction={sortField === "type" ? sortDirection : "asc"}
+                    onClick={() => onSort("type")}
+                  >
+                    Type
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
                   <TableSortLabel
                     active={sortField === "volume"}
                     direction={sortField === "volume" ? sortDirection : "asc"}
                     onClick={() => onSort("volume")}
                   >
-                    Volume
+                    Lot
                   </TableSortLabel>
                 </TableCell>
                 <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
@@ -164,7 +346,7 @@ export function TradeTable({
                     direction={sortField === "profit" ? sortDirection : "asc"}
                     onClick={() => onSort("profit")}
                   >
-                    Profit
+                    Net Profit
                   </TableSortLabel>
                 </TableCell>
               </TableRow>
@@ -215,23 +397,16 @@ export function TradeTable({
                     }}
                   >
                     <TableCell sx={{ fontFamily: '"Inter", monospace', color: "text.primary", borderColor: theme.palette.divider }}>
-                      {deal.ticket}
+                      #{deal.position_id}
+                    </TableCell>
+                    <TableCell sx={{ fontFamily: '"Inter", monospace', fontSize: "0.75rem", color: "text.secondary", borderColor: theme.palette.divider }}>
+                      {deal.time}
                     </TableCell>
                     <TableCell sx={{ fontFamily: '"Inter", monospace', fontWeight: 500, color: "text.primary", borderColor: theme.palette.divider }}>
                       {deal.symbol || "-"}
                     </TableCell>
                     <TableCell sx={{ borderColor: theme.palette.divider }}>
                       {renderDealTypeChip()}
-                    </TableCell>
-                    <TableCell sx={{ borderColor: theme.palette.divider }}>
-                      {deal.entry && (
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500 }}>
-                          {deal.entry}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell sx={{ fontFamily: '"Inter", monospace', fontSize: "0.75rem", color: "text.secondary", borderColor: theme.palette.divider, display: { xs: "none", lg: "table-cell" } }}>
-                      {deal.time}
                     </TableCell>
                     <TableCell align="right" sx={{ fontFamily: '"Inter", monospace', color: "text.primary", borderColor: theme.palette.divider }}>
                       {deal.volume.toFixed(2)}
@@ -245,7 +420,7 @@ export function TradeTable({
                         borderColor: theme.palette.divider,
                       }}
                     >
-                      {deal.profit > 0 ? "+" : ""}${deal.profit.toFixed(2)}
+                      {deal.net_profit > 0 ? "+" : ""}${deal.net_profit.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 );
@@ -263,7 +438,21 @@ export function TradeTable({
           }}
         >
           <Grid container spacing={2}>
-            <Grid size={{ xs: 6, lg: 2 }}>
+            <Grid size={{ xs: 6, md: 2 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                Total Trades
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: '"Inter", monospace',
+                  fontWeight: 700,
+                  color: "text.primary",
+                }}
+              >
+                {totals.totalTrades}
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 6, md: 2 }}>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 Total Volume
               </Typography>
@@ -277,7 +466,7 @@ export function TradeTable({
                 {totals.volume.toFixed(2)} lots
               </Typography>
             </Grid>
-            <Grid size={{ xs: 6, lg: 2 }}>
+            <Grid size={{ xs: 6, md: 2 }}>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 Gross Profit
               </Typography>
@@ -291,7 +480,7 @@ export function TradeTable({
                 +${totals.grossProfit.toFixed(2)}
               </Typography>
             </Grid>
-            <Grid size={{ xs: 6, lg: 2 }}>
+            <Grid size={{ xs: 6, md: 2 }}>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 Gross Loss
               </Typography>
@@ -305,35 +494,7 @@ export function TradeTable({
                 ${totals.grossLoss.toFixed(2)}
               </Typography>
             </Grid>
-            <Grid size={{ xs: 6, lg: 2 }}>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Commission
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: '"Inter", monospace',
-                  fontWeight: 700,
-                  color: "text.primary",
-                }}
-              >
-                ${totals.commission.toFixed(2)}
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 6, lg: 2 }}>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Swap
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: '"Inter", monospace',
-                  fontWeight: 700,
-                  color: "text.primary",
-                }}
-              >
-                ${totals.swap.toFixed(2)}
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 6, lg: 2 }}>
+            <Grid size={{ xs: 6, md: 2 }}>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 Net P/L
               </Typography>
@@ -346,6 +507,21 @@ export function TradeTable({
                 }}
               >
                 {totals.netPL > 0 ? "+" : ""}${totals.netPL.toFixed(2)}
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 6, md: 2 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                Fee/Comm/Swap
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: '"Inter", monospace',
+                  fontWeight: 500,
+                  color: "text.secondary",
+                  fontSize: "0.8rem"
+                }}
+              >
+                ${(totals.commission + totals.swap + (totals as any).fee || 0).toFixed(2)}
               </Typography>
             </Grid>
           </Grid>

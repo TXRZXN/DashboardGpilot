@@ -1,10 +1,11 @@
 "use client";
 
-import { Card, CardContent, Box, Typography, Grid } from "@mui/material";
+import { Card, CardContent, Box, Typography, Grid, Tooltip, IconButton, Stack } from "@mui/material";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import BalanceIcon from "@mui/icons-material/Balance";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { SvgIconComponent } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 
@@ -15,12 +16,87 @@ interface MetricData {
   icon: SvgIconComponent;
   colorKey: "success" | "primary" | "error";
   bgColor: string;
+  formula: string;
+}
+
+interface MetricItemProps {
+  label: string;
+  value: string | number;
+  color?: string;
+  tooltip?: string;
+}
+
+function MetricItem({ label, value, color = "text.primary", tooltip, icon: Icon }: MetricItemProps & { icon: SvgIconComponent }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  return (
+    <Card 
+      variant="outlined" 
+      sx={{ 
+        height: '100%',
+        bgcolor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)',
+        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+        borderRadius: 2,
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          borderColor: 'primary.main',
+          bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+          transform: 'translateY(-2px)',
+          boxShadow: isDark ? '0 8px 24px -12px rgba(0,0,0,0.5)' : '0 8px 24px -12px rgba(0,0,0,0.1)'
+        }
+      }}
+    >
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: "8px",
+              bgcolor: `${color}15`,
+              color: color,
+            }}
+          >
+            <Icon sx={{ fontSize: 18 }} />
+          </Box>
+          {tooltip && (
+            <Tooltip title={tooltip} arrow>
+              <IconButton 
+                size="small" 
+                aria-label="More information"
+                sx={{ p: 0, color: "text.disabled", mt: -0.5, mr: -0.5 }}
+              >
+                <InfoOutlinedIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+        
+        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, display: 'block', mb: 0.5 }}>
+          {label}
+        </Typography>
+        
+        <Typography variant="h5" sx={{ color: color, fontWeight: 800, letterSpacing: '-0.02em' }}>
+          {value}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
 }
 
 interface RiskMetricsProps {
   readonly winRate?: number;
-  readonly sharpeRatio?: number;
+  readonly recoveryFactor?: number;
   readonly maxDrawdown?: number;
+  readonly profitFactor?: number;
+  readonly grossProfit?: number;
+  readonly grossLoss?: number;
+  readonly avgWin?: number;
+  readonly avgLoss?: number;
   readonly totalTrades?: number;
   readonly wins?: number;
   readonly loading?: boolean;
@@ -28,110 +104,57 @@ interface RiskMetricsProps {
 
 export function RiskMetrics({ 
   winRate = 0, 
-  sharpeRatio = 0, 
+  recoveryFactor = 0, 
   maxDrawdown = 0, 
+  profitFactor = 0,
+  grossProfit = 0,
+  grossLoss = 0,
+  avgWin = 0,
+  avgLoss = 0,
   totalTrades = 0, 
   wins = 0,
   loading 
 }: Readonly<RiskMetricsProps>) {
   const theme = useTheme();
 
-  const metrics: MetricData[] = [
-    {
-      label: "Win Rate",
-      value: `${winRate.toFixed(1)}%`,
-      description: `${wins} wins / ${totalTrades} total`,
-      icon: TrendingUpIcon,
-      colorKey: "success",
-      bgColor: "rgba(16, 185, 129, 0.2)",
-    },
-    {
-      label: "Sharpe Ratio",
-      value: sharpeRatio.toFixed(2),
-      description: "Risk-adjusted return",
-      icon: BalanceIcon,
-      colorKey: "primary",
-      bgColor: "rgba(34, 211, 238, 0.2)",
-    },
-    {
-      label: "Risk Reward",
-      value: "1:2.4", // ยังคง Mock ก้อนนี้ไว้ก่อนถ้าไม่มีสูตรคำนวณที่แน่นอน
-      description: "Avg win vs avg loss",
-      icon: TrackChangesIcon,
-      colorKey: "primary",
-      bgColor: "rgba(34, 211, 238, 0.2)",
-    },
-    {
-      label: "Max Drawdown",
-      value: `-${maxDrawdown.toFixed(1)}%`,
-      description: "Peak to trough drop",
-      icon: TrendingDownIcon,
-      colorKey: "error",
-      bgColor: "rgba(239, 68, 68, 0.2)",
-    },
-  ];
-
-  const getColor = (key: string) => {
-    switch (key) {
-      case "success":
-        return theme.palette.success.main;
-      case "primary":
-        return theme.palette.primary.main;
-      case "error":
-        return theme.palette.error.main;
-      default:
-        return theme.palette.text.primary;
-    }
-  };
-
   return (
-    <Grid container spacing={{ xs: 1.5, lg: 2 }}>
-      {metrics.map((metric) => (
-        <Grid key={metric.label} size={{ xs: 6, lg: 3 }}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent sx={{ p: { xs: 2, lg: 2.5 } }}>
-              <Box sx={{ mb: 1.5 }}>
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 2,
-                    bgcolor: metric.bgColor,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <metric.icon sx={{ color: getColor(metric.colorKey), fontSize: 20 }} />
-                </Box>
-              </Box>
-              <Typography
-                variant="caption"
-                sx={{ color: "text.secondary", fontWeight: 500 }}
-              >
-                {metric.label}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: '"Inter", monospace',
-                  fontSize: { xs: "1.5rem", lg: "1.75rem" },
-                  fontWeight: 700,
-                  color: getColor(metric.colorKey),
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                {loading ? "..." : metric.value}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ color: "text.secondary", display: "block", mt: 0.5 }}
-              >
-                {metric.description}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      ))}
+    <Grid container spacing={{ xs: 2, lg: 3 }}>
+      <Grid size={{ xs: 6 }}>
+        <MetricItem 
+          label="Win Rate" 
+          value={`${winRate.toFixed(1)}%`} 
+          color={theme.palette.success.main}
+          icon={TrendingUpIcon}
+          tooltip="อัตราการชนะ คำนวณจากเปอร์เซ็นต์ของไม้ที่ปิดแล้วมีกำไรสุทธิเทียบกับจำนวนออเดอร์ทั้งหมด"
+        />
+      </Grid>
+      <Grid size={{ xs: 6 }}>
+        <MetricItem 
+          label="Recovery Factor" 
+          value={`${recoveryFactor.toFixed(2)}x`}
+          color={theme.palette.primary.main}
+          icon={TrackChangesIcon}
+          tooltip="Recovery Factor วัดความสามารถในการทำกำไรคืนเมื่อเทียบกับจุดที่ขาดทุนสะสมสูงสุด (กำไรสุทธิ / Max DD Amount) เป็นการวัดความอึดของพอร์ต"
+        />
+      </Grid>
+      <Grid size={{ xs: 6 }}>
+        <MetricItem 
+          label="Max DD" 
+          value={`${maxDrawdown.toFixed(1)}%`} 
+          color={theme.palette.error.main}
+          icon={TrendingDownIcon}
+          tooltip="Maximum Drawdown คือจุดที่พอร์ตตกลงมามากที่สุดจากจุดสูงสุด (Peak) วัดเป็นเปอร์เซ็นต์ของยอดเงินรวม"
+        />
+      </Grid>
+      <Grid size={{ xs: 6 }}>
+        <MetricItem 
+          label="Profit Factor" 
+          value={profitFactor.toFixed(2)} 
+          color={profitFactor >= 2 ? theme.palette.success.main : profitFactor >= 1.5 ? theme.palette.primary.main : theme.palette.text.primary}
+          icon={BalanceIcon}
+          tooltip="Profit Factor = กำไรรวม / ขาดทุนรวม (ควรมากกว่า 1.5 สำหรับกลยุทธ์ที่ดี)"
+        />
+      </Grid>
     </Grid>
   );
 }

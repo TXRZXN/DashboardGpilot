@@ -1,7 +1,6 @@
 "use client";
 
 import { Box, Typography, Alert } from "@mui/material";
-import { DashboardLayout } from "@/shared/ui";
 import { TradeTable } from "@/features/history/components";
 import { useHistoryData } from "@/features/history/hooks";
 
@@ -11,52 +10,80 @@ export default function HistoryPage() {
     error,
     deals,
     totals,
-    search,
-    setSearch,
+    
+    // Sort
     sortField,
     sortDirection,
     handleSort,
+
+    // Filter Controls
+    search, setSearch,
+    typeFilter, setTypeFilter,
+    startDate, setStartDate,
+    endDate, setEndDate,
+    minProfit, setMinProfit,
+    maxProfit, setMaxProfit,
+    minVolume, setMinVolume,
+    maxVolume, setMaxVolume,
+    
     filteredCount,
   } = useHistoryData();
 
   return (
-    <DashboardLayout>
-      <Box sx={{ p: { xs: 2, lg: 3 }, flex: 1 }}>
-        <Box sx={{ mb: { xs: 2, lg: 3 } }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontFamily: '"Manrope", sans-serif',
-              fontWeight: 700,
-              color: "text.primary",
-              fontSize: { xs: "1.25rem", lg: "1.5rem" },
-            }}
-          >
-            Trade History
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            Complete trading record with filtering and totals
-          </Typography>
-        </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        <TradeTable
-          loading={loading}
-          deals={deals}
-          totals={totals}
-          search={search}
-          onSearchChange={setSearch}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          onSort={handleSort}
-          filteredCount={filteredCount}
-        />
+    <Box sx={{ p: { xs: 2, lg: 3 }, flex: 1 }}>
+      <Box sx={{ mb: { xs: 2, lg: 3 } }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontFamily: '"Manrope", sans-serif',
+            fontWeight: 700,
+            color: "text.primary",
+            fontSize: { xs: "1.25rem", lg: "1.5rem" },
+          }}
+        >
+          Trade History
+        </Typography>
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+          Complete trading record with advanced filtering and grouping
+        </Typography>
       </Box>
-    </DashboardLayout>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <TradeTable
+        loading={loading}
+        deals={deals}
+        totals={totals}
+        
+        // Search & Sort
+        search={search}
+        onSearchChange={setSearch}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        
+        // Advanced Filters
+        typeFilter={typeFilter}
+        onTypeFilterChange={setTypeFilter}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        minProfit={minProfit}
+        onMinProfitChange={setMinProfit}
+        maxProfit={maxProfit}
+        onMaxProfitChange={setMaxProfit}
+        minVolume={minVolume}
+        onMinVolumeChange={setMinVolume}
+        maxVolume={maxVolume}
+        onMaxVolumeChange={setMaxVolume}
+        
+        filteredCount={filteredCount}
+      />
+    </Box>
   );
 }

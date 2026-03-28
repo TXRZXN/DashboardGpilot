@@ -1,8 +1,9 @@
 "use client";
 
-import { Card, CardContent, Box, Typography } from "@mui/material";
+import { Card, CardContent, Box, Typography, Tooltip, IconButton } from "@mui/material";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { useTheme } from "@mui/material/styles";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 interface PLData {
   range: string;
@@ -85,15 +86,19 @@ export function PLDistribution({ data: propData, loading }: Readonly<PLDistribut
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: { xs: 2, lg: 3 } }}>
-        <Box sx={{ mb: 2 }}>
-          <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 600, color: "text.primary" }}
-          >
-            P/L Distribution
-          </Typography>
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.primary" }}>
+              P/L Distribution
+            </Typography>
+            <Tooltip title="กราฟการกระจายตัวของกำไร/ขาดทุน (Histogram) แสดงให้เห็นว่าไม้ส่วนใหญ่ของคุณกำไรหรือขาดทุนอยู่ในช่วงราคาใด" arrow>
+              <IconButton size="small" sx={{ p: 0, color: "text.secondary" }}>
+                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Trade outcome frequency by profit range
+            Frequency of trade outcome ranges
           </Typography>
         </Box>
         <Box sx={{ height: { xs: 200, lg: 250 }, width: "100%" }}>
