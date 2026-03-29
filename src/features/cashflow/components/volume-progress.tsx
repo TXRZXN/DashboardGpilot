@@ -36,17 +36,22 @@ export function VolumeProgress({ currentVolume, targetVolume, tradeCount, loadin
             </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", justifyContent: "center", mb: 4, position: "relative" }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
           {loading ? (
             <Skeleton variant="circular" width={140} height={140} />
           ) : (
-            <>
+            <Box sx={{ position: "relative", width: 140, height: 140 }}>
               <CircularProgress
                 variant="determinate"
                 value={100}
                 size={140}
                 thickness={4}
-                sx={{ color: (theme) => theme.palette.mode === "dark" ? "rgba(148, 163, 184, 0.1)" : "rgba(15, 23, 42, 0.05)" }}
+                sx={{ 
+                  color: (theme) => theme.palette.mode === "dark" ? "rgba(148, 163, 184, 0.1)" : "rgba(15, 23, 42, 0.05)",
+                  position: "absolute",
+                  top: 0,
+                  left: 0
+                }}
               />
               <CircularProgress
                 variant="determinate"
@@ -56,6 +61,7 @@ export function VolumeProgress({ currentVolume, targetVolume, tradeCount, loadin
                 sx={{
                   color: "primary.main",
                   position: "absolute",
+                  top: 0,
                   left: 0,
                   strokeLinecap: "round",
                 }}
@@ -80,7 +86,7 @@ export function VolumeProgress({ currentVolume, targetVolume, tradeCount, loadin
                   of goal
                 </Typography>
               </Box>
-            </>
+            </Box>
           )}
         </Box>
 

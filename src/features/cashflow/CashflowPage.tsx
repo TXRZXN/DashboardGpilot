@@ -3,7 +3,7 @@
 import { Box, Typography, Grid } from "@mui/material";
 import { 
   BalanceChart, 
-  VolumeProgress, 
+  CashflowDistribution, 
   TransactionLedger, 
   FlowCards 
 } from "@/features/cashflow/components";
@@ -15,13 +15,14 @@ export default function CashflowPage() {
     transactions,
     balanceData,
     volumeStats,
+    cashflowStats,
     currentBalance,
     balanceChange,
     balanceChangePercent,
   } = useCashflowData();
 
   return (
-    <Box sx={{ p: { xs: 2, lg: 3 }, flex: 1 }}>
+    <Box sx={{ p: { xs: 1, lg: 3 }, flex: 1 }}>
       <Box sx={{ mb: { xs: 2, lg: 3 } }}>
         <Typography
           variant="h5"
@@ -50,11 +51,10 @@ export default function CashflowPage() {
           />
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
-          <VolumeProgress 
+          <CashflowDistribution 
             loading={loading} 
-            currentVolume={volumeStats?.currentVolume || 0}
-            targetVolume={volumeStats?.targetVolume || 0}
-            tradeCount={volumeStats?.tradeCount || 0}
+            deposits={cashflowStats?.deposits || 0}
+            withdrawals={cashflowStats?.withdrawals || 0}
           />
         </Grid>
       </Grid>

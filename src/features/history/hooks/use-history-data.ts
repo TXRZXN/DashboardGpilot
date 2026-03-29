@@ -6,7 +6,7 @@ import { getGroupedTrades, getNetProfit } from "@/features/analytics/utils/perfo
 import type { Deal } from "@/shared/types/api";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
 
-export type SortField = "position" | "symbol" | "profit" | "volume" | "time" | "type";
+export type SortField = "symbol" | "profit" | "volume" | "time" | "type";
 export type SortDirection = "asc" | "desc";
 
 export interface HistoryTotals {
@@ -115,8 +115,8 @@ export function useHistoryData() {
 
     // 4. เรียงลำดับ (Sorting)
     result.sort((a, b) => {
-      let aVal: any = a[sortField === "position" ? "position_id" : sortField];
-      let bVal: any = b[sortField === "position" ? "position_id" : sortField];
+      let aVal: any = a[sortField];
+      let bVal: any = b[sortField];
 
       if (sortField === "profit") {
         aVal = getNetProfit(a);

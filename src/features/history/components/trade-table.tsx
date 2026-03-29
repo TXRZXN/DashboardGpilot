@@ -142,7 +142,7 @@ export function TradeTable({
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <TextField
               size="small"
-              placeholder="Search position or symbol..."
+              placeholder="Search symbol..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               slotProps={{
@@ -291,19 +291,11 @@ export function TradeTable({
           </Paper>
         </Collapse>
 
-        <TableContainer>
+        {/* Desktop Table View */}
+        <TableContainer sx={{ display: { xs: 'none', md: 'block' } }}>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
-                  <TableSortLabel
-                    active={sortField === "position"}
-                    direction={sortField === "position" ? sortDirection : "asc"}
-                    onClick={() => onSort("position")}
-                  >
-                    Position
-                  </TableSortLabel>
-                </TableCell>
                 <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
                   <TableSortLabel
                     active={sortField === "time"}
@@ -396,9 +388,6 @@ export function TradeTable({
                       "&:hover": { bgcolor: isDark ? "rgba(148, 163, 184, 0.05)" : "rgba(15, 23, 42, 0.02)" },
                     }}
                   >
-                    <TableCell sx={{ fontFamily: '"Inter", monospace', color: "text.primary", borderColor: theme.palette.divider }}>
-                      #{deal.position_id}
-                    </TableCell>
                     <TableCell sx={{ fontFamily: '"Inter", monospace', fontSize: "0.75rem", color: "text.secondary", borderColor: theme.palette.divider }}>
                       {deal.time}
                     </TableCell>
@@ -428,6 +417,73 @@ export function TradeTable({
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Mobile Card View */}
+        <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
+          {deals.map((deal) => {
+            const isPositive = deal.net_profit > 0;
+            const isNegative = deal.net_profit < 0;
+
+            return (
+              <Paper
+                key={deal.ticket}
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  bgcolor: isDark ? "rgba(148, 163, 184, 0.02)" : "rgba(15, 23, 42, 0.01)",
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: "text.primary" }}>
+                      {deal.symbol || "-"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: '"Inter", monospace' }}>
+                      {deal.time}
+                    </Typography>
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontFamily: '"Inter", monospace',
+                      fontWeight: 700,
+                      fontSize: '1.1rem',
+                      color: isPositive ? "success.main" : isNegative ? "error.main" : "text.primary"
+                    }}
+                  >
+                    {isPositive ? "+" : ""}${deal.net_profit.toFixed(2)}
+                  </Typography>
+                </Box>
+                
+                <Grid container spacing={1}>
+                  <Grid size={4}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Type</Typography>
+                    <Typography variant="body2" sx={{ 
+                      fontWeight: 600, 
+                      color: deal.type === 'BUY' ? 'success.main' : deal.type === 'SELL' ? 'error.main' : 'text.primary' 
+                    }}>
+                      {deal.type}
+                    </Typography>
+                  </Grid>
+                  <Grid size={4}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Lot</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{deal.volume.toFixed(2)}</Typography>
+                  </Grid>
+                  <Grid size={4} sx={{ textAlign: 'right' }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Ticket</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>#{deal.ticket}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            );
+          })}
+          {deals.length === 0 && (
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">No trades found</Typography>
+            </Box>
+          )}
+        </Box>
 
         <Paper
           sx={{

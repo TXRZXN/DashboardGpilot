@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "@mui/material/styles";
 import { 
   Card, 
   CardContent, 
@@ -39,6 +40,8 @@ const statusConfig = {
 };
 
 export function TransactionLedger({ loading, transactions }: Readonly<TransactionLedgerProps>) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [page, setPage] = useState(0);
   const rowsPerPage = 10;
 
@@ -84,7 +87,8 @@ export function TransactionLedger({ loading, transactions }: Readonly<Transactio
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: 2,
-          overflowX: 'auto'
+          overflowX: 'auto',
+          display: { xs: 'none', md: 'block' }
         }}>
           <Table sx={{ minWidth: 650 }} aria-label="transaction ledger table">
             <TableHead>
@@ -183,6 +187,77 @@ export function TransactionLedger({ loading, transactions }: Readonly<Transactio
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Mobile View: Card List */}
+        <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
+          {paginatedTransactions.map((tx) => {
+            const statusKey = tx.status.toLowerCase() as keyof typeof statusConfig;
+            const status = statusConfig[statusKey] || statusConfig.completed;
+            const isOutflow = tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal";
+
+            return (
+              <Paper
+                key={tx.id}
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  bgcolor: isDark ? "rgba(148, 163, 184, 0.02)" : "rgba(15, 23, 42, 0.01)",
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Avatar
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          bgcolor: isOutflow ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)",
+                          color: isOutflow ? "error.main" : "success.main",
+                        }}
+                      >
+                        {isOutflow ? <CallMadeIcon sx={{ fontSize: 18 }} /> : <CallReceivedIcon sx={{ fontSize: 18 }} />}
+                      </Avatar>
+                      <Box>
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                          {tx.type === "ProfitSharing" ? "Profit Sharing" : tx.type}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {tx.date}
+                        </Typography>
+                      </Box>
+                   </Box>
+                   <Typography
+                    sx={{
+                      fontWeight: 700,
+                      color: isOutflow ? "error.main" : "success.main"
+                    }}
+                  >
+                    {isOutflow ? "-" : "+"}${tx.amount.toLocaleString()}
+                  </Typography>
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+                    {tx.method}
+                  </Typography>
+                  <Chip
+                    label={tx.status}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      bgcolor: status.bgColor,
+                      color: status.color,
+                      fontWeight: 600,
+                      fontSize: "0.65rem",
+                      borderRadius: '4px',
+                    }}
+                  />
+                </Box>
+              </Paper>
+            );
+          })}
+        </Box>
 
         <TablePagination
           rowsPerPageOptions={[10]}

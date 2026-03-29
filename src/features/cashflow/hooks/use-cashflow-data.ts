@@ -102,12 +102,25 @@ export function useCashflowData() {
     };
   }, [deals, currentBalance]);
 
+  const cashflowStats = useMemo(() => {
+    const balanceDeals = deals.filter(d => d.type === "BALANCE");
+    const deposits = balanceDeals.filter(d => d.profit > 0).reduce((sum, d) => sum + d.profit, 0);
+    const withdrawals = balanceDeals.filter(d => d.profit < 0).reduce((sum, d) => sum + Math.abs(d.profit), 0);
+    
+    return {
+      deposits,
+      withdrawals,
+      netFlow: deposits - withdrawals
+    };
+  }, [deals]);
+
   return {
     loading: isGlobalLoading,
     error,
     transactions,
     balanceData,
     volumeStats,
+    cashflowStats,
     currentBalance,
     balanceChange: 0, 
     balanceChangePercent: 0,
