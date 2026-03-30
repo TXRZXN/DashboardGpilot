@@ -1,6 +1,6 @@
 # DashboardGpilot — Frontend
 
-> Real-time Trading Dashboard สำหรับนักเทรด Forex เชื่อมต่อกับ MetaTrader 5 ผ่าน Backend API
+> Real-time Trading Dashboard สำหรับนักเทรด Forex เชื่อมต่อกับ MetaTrader 5 ผ่าน Backend API และระบบจัดการบัญชีอัจฉริยะ
 
 ---
 
@@ -18,6 +18,19 @@
 
 ---
 
+## ✨ Key Features (ล่าสุด)
+
+- **🔐 Secure Registration:** ระบบสมัครสมาชิกที่บังคับใช้ **Referral ID** เท่านั้น พร้อมรองรับการผูกบัญชี **MT5 ID** และ **Investor's Password** ตั้งแต่ขั้นตอนสมัคร
+- **📊 My Account Dashboard:** ส่วนจัดการบัญชีที่แสดงข้อมูลการเงินเชิงลึก (8 Metrics):
+    - **Performance:** Today, Week, Month Trading Profit
+    - **Capital Flow:** สรุปยอดฝาก (Deposits) และยอดถอน (Withdrawals) แยกจากกัน
+    - **Gross vs Net:** แสดงกำไรสะสม (Gross), ส่วนแบ่งแพลตฟอร์ม (Profit Sharing - PF), และกำไรสุทธิจริงหลังแบ่ง (Net Gain)
+- **🌓 Centralized Theme Control:** รวมจุดเปลี่ยน Light/Dark Mode ไว้ที่ Top Bar เพียงจุดเดียวเพื่อความสะอาดตา
+- **🚀 Partner Integration:** ปุ่ม "สมัคร Strikepro" ใน Top Bar เพื่อการเชื่อมต่อพาร์ทเนอร์ที่รวดเร็ว
+- **🎨 UI Cleanup:** ปรับปรุง Layout ให้มีความ Minimalist สูงสุด ลบโลโก้และฟิลด์ที่ไม่จำเป็นออกเพื่อให้พื้นที่แสดงข้อมูลมากที่สุด
+
+---
+
 ## 🏗 Architecture
 
 โปรเจคใช้ **Feature-based Clean Architecture** แยก Layer ชัดเจน:
@@ -25,54 +38,31 @@
 ```
 src/
 ├── app/                        # Next.js App Router (Route Definitions)
+│   ├── (auth)/                 # Route Group: Authenticated logic (Login/Register)
 │   └── (Gpilot)/               # Route Group: requires sidebar layout
-│       ├── dashboard/
-│       ├── analytics/
-│       ├── cashflow/
-│       └── history/
+│       ├── dashboard/          # Home Overview
+│       ├── account/            # My Account & Financials [NEW]
+│       ├── analytics/          # Advanced Performance
+│       └── history/            # Trade Logs
 │
 ├── features/                   # Feature Modules (UI + Application Layer)
+│   ├── auth/                   # Identity Management (Login, Register) [NEW]
+│   ├── account/                # Account & Financial Metrics [NEW]
 │   ├── dashboard/              # Dashboard feature
-│   │   ├── DashboardPage.tsx   # Page component (Server Component)
-│   │   ├── components/         # Feature-specific UI components
-│   │   └── hooks/              # Feature-specific hooks (Client-side)
 │   ├── analytics/
-│   ├── cashflow/
-│   └── history/
+│   ├── history/
+│   └── cashflow/
 │
 ├── shared/                     # Shared cross-feature code
 │   ├── api/                    # Infrastructure: API clients
-│   │   ├── client.ts           # apiClient — สำหรับ Client Components (/api/gateway proxy)
-│   │   └── server.ts           # apiServer — สำหรับ Server Components (direct backend URL)
-│   ├── services/               # Application Layer: Business logic + data fetching
-│   │   ├── account-service.ts
-│   │   └── trade-history-service.ts
-│   │   └── __tests__/          # Service Unit Tests
-│   ├── ui/                     # Shared reusable UI components
-│   │   ├── metric-card.tsx
-│   │   └── __tests__/          # Component UI Tests
+│   ├── services/               # Application Layer: Business logic
 │   ├── types/                  # Domain Types (shared TypeScript interfaces)
 │   ├── config/                 # Configuration (theme, etc.)
 │   └── utils/                  # Utility Functions
-│       └── __tests__/          # Utils Unit Tests
 │
-├── tests/                      # Global Test Setup & Mocks
-├── layouts/                    # Shared layout components (Sidebar, Header)
+├── layouts/                    # Shared layout components (Sidebar, TopBar)
 └── proxy.ts                    # Next.js Middleware (Auth guard / Gateway routing)
 ```
-
----
-
-## 🧪 Testing Strategy
-
-ยึดตาม **Global Rule #6** โดยครอบคลุมทั้ง 3 ระดับ:
-
-- **Unit Tests:** สำหรับ Business Logic, Domain Logic และ Utility Functions (เครื่องมือ: Vitest)
-- **Integration Tests:** สำหรับ API Clients, Service Workers (เครื่องมือ: Vitest + Vitest Mocks)
-- **Component Tests:** สำหรับ UI Components (เครื่องมือ: React Testing Library + happy-dom)
-
-> [!IMPORTANT]
-> **เป้าหมาย Code Coverage:** ต้องพยายามรักษาให้อยู่ที่อย่างน้อย **80%** เพื่อความยั่งยืนของโปรเจกต์
 
 ---
 
@@ -80,7 +70,7 @@ src/
 
 ### 0. Prerequisites
 
-- **Node.js:** เวอร์ชั่น 18.x ขึ้นไป (แนะนำ **v22.19.0** — มีไฟล์ `.nvmrc` ให้)
+- **Node.js:** เวอร์ชั่น 18.x ขึ้นไป (แนะนำ **v22.19.0**)
 - **NPM:** เวอร์ชั่น 10.x ขึ้นไป
 
 ### 1. ติดตั้ง dependencies
@@ -89,19 +79,14 @@ src/
 npm install
 ```
 
-### 2. ตั้งค่า Environment Variables
-
-คัดลอกไฟล์ต้นแบบและปรับแต่งค่าตามต้องการ:
-
-```bash
-cp .env.example .env.local
-```
+### 2. ตั้งค่า Environment Variables (.env)
 
 | Variable | คำอธิบาย |
 |----------|----------|
-| `NEXT_PUBLIC_API_URL` | URL ของ Backend API |
-| `NEXT_PUBLIC_IS_MOCK_MODE` | ตั้งเป็น `true` เพื่อใช้ข้อมูลจำลอง (แนะนำสำหรับการพัฒนา UI) |
-| `NEXT_PUBLIC_API_KEY` | (Optional) สำหรับการดึงข้อมูลจาก MT5 ที่ต้องใช้ Key |
+| `API_URL` | URL ของ Backend API (Internal) |
+| `API_KEY` | Key สำหรับการ Authentication กับ Backend |
+| `NEXT_PUBLIC_API_URL` | ตั้งค่าเป็น `/api/gateway` (Proxy Path) |
+| `NEXT_PUBLIC_IS_MOCK_MODE` | ตั้งเป็น `true` เพื่อใช้ข้อมูลจำลอง (ข้อมูลใน History และ Account จะโหลดจาก Mock) |
 
 ### 3. คำสั่งที่สำคัญ (Scripts)
 

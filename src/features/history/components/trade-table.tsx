@@ -25,7 +25,8 @@ import {
   InputLabel,
   Collapse,
   Button,
-  Stack
+  Stack,
+  TablePagination
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -98,6 +99,19 @@ export function TradeTable({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(Number.parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const paginatedDeals = deals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   if (loading) {
     return (
@@ -216,7 +230,7 @@ export function TradeTable({
                   type="date"
                   value={startDate}
                   onChange={(e) => onStartDateChange(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 4, md: 2 }}>
@@ -227,7 +241,7 @@ export function TradeTable({
                   type="date"
                   value={endDate}
                   onChange={(e) => onEndDateChange(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
               </Grid>
 
@@ -344,7 +358,7 @@ export function TradeTable({
               </TableRow>
             </TableHead>
             <TableBody>
-              {deals.map((deal) => {
+              {paginatedDeals.map((deal) => {
                 const renderDealTypeChip = () => {
                   let icon = <SwapHorizIcon sx={{ fontSize: 14, color: "text.secondary" }} />;
                   let bgcolor = "rgba(148, 163, 184, 0.2)";
@@ -376,8 +390,8 @@ export function TradeTable({
                 };
 
                 const getDealProfitColor = () => {
-                  if (deal.profit > 0) return "success.main";
-                  if (deal.profit < 0) return "error.main";
+                  if (deal.net_profit > 0) return "success.main";
+                  if (deal.net_profit < 0) return "error.main";
                   return "text.primary";
                 };
 
@@ -414,15 +428,44 @@ export function TradeTable({
                   </TableRow>
                 );
               })}
+              
+              {/* Summary Row inside table body (Matching "Total 11") */}
+              <TableRow sx={{ bgcolor: isDark ? "rgba(34, 211, 238, 0.05)" : "rgba(8, 145, 178, 0.03)" }}>
+                <TableCell colSpan={3} sx={{ fontWeight: 700, borderColor: theme.palette.divider }}>TOTAL</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, borderColor: theme.palette.divider }}>{totals.volume.toFixed(2)}</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, color: totals.netPL >= 0 ? "success.main" : "error.main", borderColor: theme.palette.divider }}>
+                  {totals.netPL >= 0 ? "+" : ""}${totals.netPL.toFixed(2)}
+                </TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>
 
+        {/* Pagination */}
+        <TablePagination
+          rowsPerPageOptions={[10, 25, 50]}
+          component="div"
+          count={deals.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          sx={{ display: { xs: 'none', md: 'block' }, borderBottom: `1px solid ${theme.palette.divider}` }}
+        />
+
         {/* Mobile Card View */}
         <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
-          {deals.map((deal) => {
+          {paginatedDeals.map((deal) => {
             const isPositive = deal.net_profit > 0;
             const isNegative = deal.net_profit < 0;
+            
+            let profitColor = "text.primary";
+            if (isPositive) profitColor = "success.main";
+            else if (isNegative) profitColor = "error.main";
+
+            let typeColor = "text.primary";
+            if (deal.type === 'BUY') typeColor = 'success.main';
+            else if (deal.type === 'SELL') typeColor = 'error.main';
 
             return (
               <Paper
@@ -449,7 +492,7 @@ export function TradeTable({
                       fontFamily: '"Inter", monospace',
                       fontWeight: 700,
                       fontSize: '1.1rem',
-                      color: isPositive ? "success.main" : isNegative ? "error.main" : "text.primary"
+                      color: profitColor
                     }}
                   >
                     {isPositive ? "+" : ""}${deal.net_profit.toFixed(2)}
@@ -461,7 +504,7 @@ export function TradeTable({
                     <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Type</Typography>
                     <Typography variant="body2" sx={{ 
                       fontWeight: 600, 
-                      color: deal.type === 'BUY' ? 'success.main' : deal.type === 'SELL' ? 'error.main' : 'text.primary' 
+                      color: typeColor 
                     }}>
                       {deal.type}
                     </Typography>
@@ -478,6 +521,18 @@ export function TradeTable({
               </Paper>
             );
           })}
+          
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 50]}
+            component="div"
+            count={deals.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{ display: { xs: 'block', md: 'none' }, borderTop: `1px solid ${theme.palette.divider}` }}
+          />
+
           {deals.length === 0 && (
             <Box sx={{ py: 4, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">No trades found</Typography>

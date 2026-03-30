@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { AccountService } from '@/shared/services/account-service';
-import { TradeHistoryService } from '@/shared/services/trade-history-service';
-import type { AccountInfo, Deal } from '@/shared/types/api';
-import { useApiHealth } from '@/shared/providers/api-health-provider';
+"use client";
+
+import { useMemo } from 'react';
+import { useTradeData } from '@/shared/providers/trade-data-provider';
 import { 
   calculateEquityCurve, 
   calculateSharpeRatio, 
@@ -19,68 +18,7 @@ import {
 } from '../utils/performance-utils';
 
 export function useAnalyticsData() {
-  const { isHealthy, isChecking } = useApiHealth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [account, setAccount] = useState<AccountInfo | null>(null);
-  const [deals, setDeals] = useState<readonly Deal[]>([]);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [accRes, historyRes] = await Promise.all([
-        AccountService.getAccountInfo(),
-        TradeHistoryService.getHistory()
-      ]);
-
-      const formatError = (err: any): string => {
-        if (Array.isArray(err)) {
-          return err.map(e => `${e.loc?.join('.') || 'error'}: ${e.msg || 'Unknown validation error'}`).join(', ');
-        }
-        return typeof err === 'string' ? err : 'Unknown error';
-      };
-
-      if (accRes.success && accRes.data) {
-        setAccount(accRes.data);
-      } else if (!accRes.success) {
-        setError(formatError(accRes.error));
-      }
-
-      if (historyRes.success && historyRes.data) {
-        setDeals(Array.isArray(historyRes.data.data) ? historyRes.data.data : []);
-      } else if (!historyRes.success) {
-        setError(formatError(historyRes.error));
-      }
-    } catch (err: any) {
-      setError('เกิดข้อผิดพลาดในการดึงข้อมูลวิเคราะห์');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // 1. Initial Fetch
-  useEffect(() => {
-    if (isHealthy) {
-      fetchData();
-    }
-  }, [isHealthy, fetchData]);
-
-  // 2. Auto-retry if empty (ทุกๆ 5 วินาที)
-  useEffect(() => {
-    if (!isHealthy || deals.length > 0) return;
-
-    const timer = setInterval(() => {
-      if (!loading) {
-        fetchData();
-      }
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [isHealthy, deals.length, loading, fetchData]);
-
-  const isGlobalLoading = !isHealthy || loading || isChecking;
+  const { account, deals, loading, error } = useTradeData();
 
   const stats = useMemo(() => {
     if (deals.length === 0) return null;
@@ -124,7 +62,7 @@ export function useAnalyticsData() {
   }, [deals]);
 
   return {
-    loading: isGlobalLoading,
+    loading,
     error,
     account,
     deals,

@@ -1,67 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useApiHealth } from "@/shared/providers/api-health-provider";
-import { AccountService } from "@/shared/services/account-service";
-import { TradeHistoryService } from "@/shared/services/trade-history-service";
+import { useMemo } from "react";
 import { calculateEquityCurve, getGroupedTrades } from "@/features/analytics/utils/performance-utils";
-import type { AccountInfo, Deal } from "@/shared/types/api";
+import { useTradeData } from "@/shared/providers/trade-data-provider";
 
 export function useDashboardData() {
-  const { isHealthy, isChecking } = useApiHealth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [account, setAccount] = useState<AccountInfo | null>(null);
-  const [deals, setDeals] = useState<readonly Deal[]>([]);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [accRes, historyRes] = await Promise.all([
-        AccountService.getAccountInfo(),
-        TradeHistoryService.getHistory()
-      ]);
-
-      if (accRes.success && accRes.data) {
-        setAccount(accRes.data);
-      } else if (!accRes.success) {
-        setError(accRes.error as string);
-      }
-
-      if (historyRes.success && historyRes.data) {
-        setDeals(Array.isArray(historyRes.data.data) ? historyRes.data.data : []);
-      } else if (!historyRes.success) {
-        // setError(historyRes.error as string); // Optional: Handle history errors
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // 1. Initial Fetch
-  useEffect(() => {
-    if (isHealthy) {
-      fetchData();
-    }
-  }, [isHealthy, fetchData]);
-
-  // 2. Auto-retry if empty (ทุกๆ 5 วินาที)
-  useEffect(() => {
-    if (!isHealthy || deals.length > 0) return;
-
-    const timer = setInterval(() => {
-      if (!loading) {
-        fetchData();
-      }
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [isHealthy, deals.length, loading, fetchData]);
-
-  // หาก API ไม่พร้อม หรือกำลังเช็ค ให้เข้าสู่สถานะ Skeleton (loading=true)
-  const isGlobalLoading = !isHealthy || loading || isChecking;
+  const { account, deals, loading, error, refreshData } = useTradeData();
 
   const equityData = useMemo(() => 
     calculateEquityCurve(deals).map(point => ({
@@ -99,6 +43,45 @@ export function useDashboardData() {
       .slice(0, 5);
   }, [deals]);
 
+  const timelineStats = useMemo(() => {
+    const tradeDeals = getGroupedTrades(deals).filter(d => d.symbol); // กรองเฉพาะรายการเทรดจริง
+    const now = new Date();
+    
+    // Today: วันจันทร์ที่ 30 มี.ค. 2026 (อ้างอิงจากเวลาปัจจุบัน)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Week: นับตามจันทร์ (จันทร์ที่ผ่านมาถึงจันทร์นี้)
+    const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday ...
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // ปรับให้เริ่มที่วันจันทร์
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() + diffToMonday);
+    
+    // Month: เริ่มต้นที่วันที่ 1 ของเดือนปัจจุบัน
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const stats = {
+      today: 0,
+      week: 0,
+      month: 0
+    };
+
+    tradeDeals.forEach((deal) => {
+      const dealTime = new Date(deal.time);
+      let profit = 0;
+      if (deal.net_profit !== undefined && deal.net_profit !== null) {
+        profit = deal.net_profit;
+      } else {
+        profit = (deal.profit || 0) + (deal.commission || 0) + (deal.swap || 0) + (deal.fee || 0);
+      }
+
+      if (dealTime >= today) stats.today += profit;
+      if (dealTime >= startOfWeek) stats.week += profit;
+      if (dealTime >= startOfMonth) stats.month += profit;
+    });
+
+    return stats;
+  }, [deals]);
+
   const volumeStats = useMemo(() => {
     const groupedTrades = getGroupedTrades(deals).filter(d => d.symbol);
     const totalVolume = groupedTrades.reduce((sum, t) => sum + t.volume, 0);
@@ -121,13 +104,17 @@ export function useDashboardData() {
   };
 
   return {
-    loading: isGlobalLoading,
+    loading,
     error,
     account,
     deals: [...deals].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()),
     equityData,
     symbolStats,
     volumeStats,
+    profitToday: timelineStats.today,
+    profitWeek: timelineStats.week,
+    profitMonth: timelineStats.month,
     formatCurrency,
+    refreshData
   };
 }

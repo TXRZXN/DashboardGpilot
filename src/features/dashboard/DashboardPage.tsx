@@ -42,6 +42,9 @@ export default function DashboardPage() {
     equityData,
     symbolStats,
     volumeStats,
+    profitToday,
+    profitWeek,
+    profitMonth,
     formatCurrency,
   } = useDashboardData();
 
@@ -68,26 +71,26 @@ export default function DashboardPage() {
       iconColor: "#22D3EE"
     },
     {
-      title: "Equity",
-      value: formatCurrency(equity),
-      change: profitChangeStr,
-      changeType: profitChangeType,
+      title: "Profit TODAY",
+      value: formatCurrency(profitToday),
+      change: "Daily performance",
+      changeType: profitToday >= 0 ? "positive" as const : "negative" as const,
       icon: TrendingUpIcon,
       iconColor: "#10B981"
     },
     {
-      title: "Floating P/L",
-      value: formattedProfit,
-      change: undefined,
-      changeType: profitChangeType,
+      title: "Profit WEEK",
+      value: formatCurrency(profitWeek),
+      change: "Weekly (From Mon)",
+      changeType: profitWeek >= 0 ? "positive" as const : "negative" as const,
       icon: AttachMoneyIcon,
       iconColor: "#10B981"
     },
     {
-      title: "Margin Level",
-      value: `${marginLevel.toFixed(2)}%`,
-      change: `Leverage 1:${leverage}`,
-      changeType: "neutral" as const,
+      title: "Profit MONTH",
+      value: formatCurrency(profitMonth),
+      change: "Monthly performance",
+      changeType: profitMonth >= 0 ? "positive" as const : "negative" as const,
       icon: PercentIcon,
       iconColor: "#22D3EE"
     },
@@ -123,15 +126,6 @@ export default function DashboardPage() {
         >
           Trading Dashboard
         </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {loading ? (
-            <Skeleton width={150} height={20} />
-          ) : (
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Account: {account?.login} ({account?.name}) - {account?.server}
-            </Typography>
-          )}
-        </Box>
       </Box>
 
       {error && (

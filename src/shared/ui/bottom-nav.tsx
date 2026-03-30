@@ -7,6 +7,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import HistoryIcon from "@mui/icons-material/History";
 import AnalyticsIcon from "@mui/icons-material/Analytics";
+import PersonIcon from "@mui/icons-material/Person";
 import { useThemeMode } from "@/shared/ui/theme-provider";
 
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
   { label: "Cashflow", href: "/cashflow", icon: <AccountBalanceWalletIcon /> },
   { label: "History", href: "/history", icon: <HistoryIcon /> },
   { label: "Analytics", href: "/analytics", icon: <AnalyticsIcon /> },
+  { label: "Account", href: "/account", icon: <PersonIcon /> },
 ];
 
 export function BottomNav() {

@@ -10,38 +10,32 @@ vi.mock('@/shared/api/client', () => ({
 describe('TradeHistoryService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset environment variables if needed
-    process.env.NEXT_PUBLIC_IS_MOCK_MODE = 'false';
   });
 
-  it('should return mock data when IS_MOCK_MODE is true', async () => {
-    process.env.NEXT_PUBLIC_IS_MOCK_MODE = 'true';
-    
-    // We need to re-import or handle the logic inside the service
-    // In trade-history-service.ts, IS_MOCK_MODE is evaluated at the top level
-    // so we might need to use vi.stubEnv or similar if it's dynamic
-    
-    const result = await TradeHistoryService.getHistory();
-    
-    expect(result.success).toBe(true);
-    expect(result.data?.total).toBeGreaterThan(0);
-    expect(apiClient).not.toHaveBeenCalled();
-  });
-
-  it('should call apiClient when IS_MOCK_MODE is false', async () => {
-    process.env.NEXT_PUBLIC_IS_MOCK_MODE = 'false';
-    const mockData = { total: 1, data: [] };
-    vi.mocked(apiClient).mockResolvedValue(mockData);
+  it('should call apiClient with correct arguments', async () => {
+    const mockData = { total: 1, data: [] as any[] };
+    vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData });
 
     const result = await TradeHistoryService.getHistory();
 
-    expect(apiClient).toHaveBeenCalledWith('/api/v1/trades');
+    // Updated to match the current implementation: apiClient(endpoint, options, params)
+    expect(apiClient).toHaveBeenCalledWith('/api/v1/trades', undefined, undefined);
     expect(result.success).toBe(true);
     expect(result.data).toEqual(mockData);
   });
 
+  it('should pass parameters to apiClient correctly', async () => {
+    const mockData = { total: 1, data: [] as any[] };
+    vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData });
+    const params = { from_date: '2024-01-01' };
+
+    const result = await TradeHistoryService.getHistory(params);
+
+    expect(apiClient).toHaveBeenCalledWith('/api/v1/trades', undefined, params);
+    expect(result.success).toBe(true);
+  });
+
   it('should handle API errors correctly', async () => {
-    process.env.NEXT_PUBLIC_IS_MOCK_MODE = 'false';
     vi.mocked(apiClient).mockRejectedValue(new Error('Network Error'));
 
     const result = await TradeHistoryService.getHistory();

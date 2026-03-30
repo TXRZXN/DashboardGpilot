@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, IconButton } from "@mui/material";
-import { Dashboard, AccountBalanceWallet, History, Analytics, LightMode, DarkMode } from "@mui/icons-material";
+import { Dashboard, AccountBalanceWallet, History, Analytics, LightMode, DarkMode, Person } from "@mui/icons-material";
 import { useThemeMode } from "@/shared/ui";
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { label: "Cashflow", href: "/cashflow", icon: AccountBalanceWallet },
   { label: "History", href: "/history", icon: History },
   { label: "Analytics", href: "/analytics", icon: Analytics },
+  { label: "My account", href: "/account", icon: Person },
 ];
 
 export function Sidebar() {
@@ -83,22 +84,6 @@ export function Sidebar() {
               </Typography>
             </Box>
           </Box>
-          <IconButton
-            onClick={toggleTheme}
-            aria-label="Toggle brightness mode"
-            sx={{
-              bgcolor: mode === "dark" ? "rgba(148, 163, 184, 0.1)" : "rgba(15, 23, 42, 0.05)",
-              "&:hover": {
-                bgcolor: mode === "dark" ? "rgba(148, 163, 184, 0.2)" : "rgba(15, 23, 42, 0.1)",
-              },
-            }}
-          >
-            {mode === "dark" ? (
-              <LightMode sx={{ fontSize: 20, color: "#FBBF24" }} />
-            ) : (
-              <DarkMode sx={{ fontSize: 20, color: "#64748B" }} />
-            )}
-          </IconButton>
         </Box>
       </Box>
 
