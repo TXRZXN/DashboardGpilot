@@ -1,7 +1,10 @@
 import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
 import { ENDPOINTS } from '@/shared/api/endpoint';
+import { createLogger } from '@/shared/utils/logger';
 import type { TradesHistoryResponse, ServiceResponse, TradeRequest } from '@/shared/types/api';
+
+const logger = createLogger('TradeHistoryService');
 
 /**
  * Service สำหรับจัดการประวัติการเทรด (Deals)
@@ -12,18 +15,28 @@ export const TradeHistoryService = {
    */
   getHistory: async (params?: TradeRequest): Promise<ServiceResponse<TradesHistoryResponse>> => {
     try {
+      logger.info('Fetching trade history', { params });
+      
       // apiClient จะคืนค่า { success, data, error } ที่ส่งมาจาก Backend โดยตรง
-      const response = await apiClient<ServiceResponse<TradesHistoryResponse>>(ENDPOINTS.TRADES, undefined, params as any);
+      const response = await apiClient<ServiceResponse<TradesHistoryResponse>>(
+        ENDPOINTS.TRADES, 
+        undefined, 
+        params as any
+      );
+      
+      
       return response;
     } catch (e: unknown) {
-      const errorData =
-        e instanceof ApiError
-          ? e.message
-          : 'เกิดข้อผิดพลาดในการดึงข้อมูลประวัติการทำรายการ';
+      const errorMsg = e instanceof ApiError 
+        ? e.message 
+        : 'เกิดข้อผิดพลาดในการดึงข้อมูลประวัติการทำรายการ';
+      
+      logger.error('Failed to fetch trade history', e instanceof Error ? e : String(e));
+      
       return {
         success: false,
         data: null,
-        error: errorData,
+        error: errorMsg,
       };
     }
   },

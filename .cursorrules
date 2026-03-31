@@ -30,15 +30,20 @@
 
 ### 4. 📂 โครงสร้างโฟลเดอร์ (Folder Structure)
 
-ใช้โครงสร้างแบบ **Feature-based architecture** เพื่อรองรับโปรเจกต์ขนาดใหญ่:
+ใช้โครงสร้างแบบ **Feature-based architecture** โดยแบ่งเป็นส่วนหลักๆ ดังนี้:
 
-- `src/features/[feature-name]/`: รวมทุกอย่างที่เกี่ยวกับ Feature นั้นๆ (Components, Hooks, Types, Services)
-- `src/shared/`: รวมโค้ดที่ใช้ร่วมกันทั้งโปรเจกต์:
-  - `ui/`: Shared UI Components
-  - `hooks/`: Reusable Hooks
-  - `services/`: Common Service Layer
-  - `api/`: Centralized API Clients
-  - `types/`: Global Type Definitions
+- `src/app/`: Next.js App Router (Pages, Layouts, API Routes) เป็นส่วนที่ใช้จัดการ Routing ของแอปพลิเคชัน
+- `src/features/[feature-name]/`: รวมทุกอย่างที่เฉพาะเจาะจงกับ Feature นั้นๆ (Components, Hooks, Types, Services)
+- `src/layouts/`: ไฟล์ Layout ส่วนกลางที่ใช้ร่วมกันในหลายๆ หน้า (เช่น Root, Dashboards, Auth Group)
+- `src/shared/`: โค้ดที่ใช้ร่วมกันระดับโปรเจกต์ (Shared across features):
+  - `api/`: การประกาศ Endpoint และ Config สำหรับ API Clients
+  - `config/`: การตั้งค่าต่างๆ (Environment variables, Constants, App configuration)
+  - `hooks/`: Custom Hooks ทั่วไปที่ไม่ขึ้นกับ Feature ใดๆ
+  - `providers/`: React Context Providers สำหรับการจัดการสถานะ (Global States/Providers)
+  - `services/`: Shared Application Logic และ API Integrations
+  - `types/`: Global Domain Models และ TypeScript Definitions
+  - `ui/`: Common UI Components (เช่น Buttons, Inputs, Dialogs)
+  - `utils/`: Helper functions ทั่วไปที่ใช้ประมวลผลข้อมูล
 
 ### 5. 🌐 การจัดการ API (API Layer)
 

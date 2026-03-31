@@ -6,7 +6,7 @@
 
 | Category | Technology |
 |------|-----------|
-| Framework | Next.js 16 (App Router + Turbopack) |
+| Framework | Next.js 15 (App Router + Turbopack) |
 | Language | TypeScript 5 (Strict Mode) |
 | UI Library | MUI v7 (Material UI) |
 | Charts | @mui/x-charts v8 |
@@ -14,7 +14,7 @@
 | Styling | Emotion + TailwindCSS v4 |
 | **Unit Testing** | **Vitest** |
 | **UI Testing** | **React Testing Library + happy-dom** |
-| **Coverage** | **v8 (@vitest/coverage-v8)** |
+| **Observability** | **Structured Logging + Distributed Tracing** |
 
 ---
 
@@ -33,7 +33,7 @@
 
 ## 🏗 Architecture
 
-โปรเจคใช้ **Feature-based Clean Architecture** แยก Layer ชัดเจน:
+โปรเจคใช้ **Feature-based Clean Architecture** แยก Layer ชัดเจน (อ่านรายละเอียดได้ที่ [ARCHITECTURE.md](file:///d:/Users/naruechatbu/Work/__Personal__/DashboardGpilot/Frontend/ARCHITECTURE.md)):
 
 ```
 src/
@@ -58,7 +58,7 @@ src/
 │   ├── services/               # Application Layer: Business logic
 │   ├── types/                  # Domain Types (shared TypeScript interfaces)
 │   ├── config/                 # Configuration (theme, etc.)
-│   └── utils/                  # Utility Functions
+│   └── utils/                  # Utility Functions (crypto, logger)
 │
 ├── layouts/                    # Shared layout components (Sidebar, TopBar)
 └── proxy.ts                    # Next.js Middleware (Auth guard / Gateway routing)
