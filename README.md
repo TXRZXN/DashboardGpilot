@@ -46,14 +46,16 @@ src/
 │       └── history/            # Trade Logs
 │
 ├── features/                   # Feature Modules (UI + Application Layer)
-│   ├── auth/                   # Identity Management (Login, Register) [NEW]
-│   ├── account/                # Account & Financial Metrics [NEW]
+│   ├── auth/                   # Identity Management (Login, Register)
+│   ├── account/                # Account & Financial Metrics [REFACTORED]
+│   │   └── components/         # Feature-specific UI components
 │   ├── dashboard/              # Dashboard feature
 │   ├── analytics/
 │   ├── history/
 │   └── cashflow/
 │
 ├── shared/                     # Shared cross-feature code
+│   ├── ui/                     # Reusable UI Components (DataTable, Gauge, Charts) [NEW]
 │   ├── api/                    # Infrastructure: API clients
 │   ├── services/               # Application Layer: Business logic
 │   ├── types/                  # Domain Types (shared TypeScript interfaces)
@@ -153,7 +155,8 @@ User visits /dashboard
 | สิ่ง | รูปแบบ | ตัวอย่าง |
 |-----|--------|---------|
 | React Components | PascalCase | `MetricCard.tsx` |
-| Hooks | `use` prefix | `use-dashboard-data.ts` |
+| Files (non-component) | kebab-case | `api-client.ts`, `logger.ts` |
+| Hooks | `use` (camelCase) | `use-dashboard-data.ts` |
 | Services | kebab-case | `account-service.ts` |
-| Types/Interfaces | PascalCase | `AccountInfo`, `Deal` |
-| Folders | kebab-case | `trade-history/` |
+| Types/Interfaces | PascalCase | `AccountInfo`, `ServiceResponse` |
+| Folders | kebab-case | `trade-history/`, `shared/ui/` |

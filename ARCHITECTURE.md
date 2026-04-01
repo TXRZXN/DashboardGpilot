@@ -22,11 +22,11 @@ The project follows a **Feature-based Clean Architecture** to ensure separation 
 ```
 src/
 ├── app/                        # Next.js App Router (Routing & Pages)
-├── features/                   # Feature Modules (UI Components + Hooks)
-│   ├── auth/                   # Identity & User Management
-│   ├── account/                # Financial Metrics & Account Stats
+├── features/                   # Feature Modules (Feature UI + Hooks)
+│   ├── account/                # Components specific to account
 │   └── ...
 ├── shared/                     # Shared cross-feature code
+│   ├── ui/                     # Presentation Layer: Reusable UI (DataTable, Charts) [NEW]
 │   ├── api/                    # Infrastructure: API client & Endpoints
 │   ├── services/               # Application Layer: Business Flow Orchestration
 │   ├── types/                  # Domain Models & Type Definitions
@@ -37,7 +37,10 @@ src/
 
 ### Layer Responsibility
 
-1.  **Presentation Layer (`features/`, `app/`)**: Handles user input and UI rendering. No business logic or direct API calls should exist here. They must call the **Application Layer** (Services).
+1.  **Presentation Layer (`features/`, `app/`, `shared/ui/`)**: Handles user input and UI rendering.
+    - **Feature components**: Specific to a business use case (e.g., `ProfileCard`).
+    - **Shared UI**: Universal, reusable components (e.g., `DataTable`, `BalanceChart`).
+    - **App Router**: Renders static shell and handles routing.
 2.  **Application Layer (`shared/services/`)**: Orchestrates the business flow, calls API clients (Infrastructure), and transforms data into Domain-friendly models.
 3.  **Domain Layer (`shared/types/domain/`)**: Contains pure business entities and rules. No external dependencies.
 4.  **Infrastructure Layer (`shared/api/`)**: Handles external communication (HTTP fetch), error handling, and cross-cutting concerns (logging, tracing).
