@@ -21,7 +21,7 @@ const ExecutionLog = dynamic(() => import("@/shared/ui/execution-log").then(mod 
   ssr: false,
 });
 
-const VolumeProgress = dynamic(() => import("@/features/cashflow/components/volume-progress").then(mod => mod.VolumeProgress), {
+const VolumeProgress = dynamic(() => import("@/shared/ui/volume-progress").then(mod => mod.VolumeProgress), {
   loading: () => <Skeleton variant="rectangular" height={250} sx={{ borderRadius: 4, bgcolor: 'rgba(255,255,255,0.03)' }} />,
   ssr: false,
 });
@@ -51,8 +51,8 @@ export default function DashboardPage() {
   const balance = account?.balance ?? 0;
   const equity = account?.equity ?? 0;
   const profit = account?.profit ?? 0;
-  const marginLevel = account?.margin_level ?? 0;
-  const marginFree = account?.margin_free ?? 0;
+  const marginLevel = account?.marginLevel ?? 0;
+  const marginFree = account?.marginFree ?? 0;
   const margin = account?.margin ?? 0;
   const leverage = account?.leverage ?? 0;
 

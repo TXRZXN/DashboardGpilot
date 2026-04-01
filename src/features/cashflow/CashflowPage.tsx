@@ -2,11 +2,11 @@
 
 import { Box, Typography, Grid } from "@mui/material";
 import { 
-  BalanceChart, 
   CashflowDistribution, 
   TransactionLedger, 
   FlowCards 
 } from "@/features/cashflow/components";
+import { BalanceChart } from "@/shared/ui";
 import { useCashflowData } from "@/features/cashflow/hooks";
 
 export default function CashflowPage() {

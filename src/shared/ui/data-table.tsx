@@ -37,9 +37,9 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTheme } from "@mui/material/styles";
 import { useState } from "react";
 import type { GroupedDeal } from "@/shared/types/api";
-import type { SortField, SortDirection, HistoryTotals } from "../hooks/use-history-data";
+import type { SortField, SortDirection, HistoryTotals } from "@/features/history/hooks/use-history-data";
 
-interface TradeTableProps {
+interface DataTableProps {
   readonly loading?: boolean;
   readonly deals: readonly GroupedDeal[];
   readonly totals: HistoryTotals;
@@ -68,7 +68,7 @@ interface TradeTableProps {
   readonly filteredCount: number;
 }
 
-export function TradeTable({
+export function DataTable({
   loading,
   deals,
   totals,
@@ -95,7 +95,7 @@ export function TradeTable({
   onMaxVolumeChange,
 
   filteredCount,
-}: Readonly<TradeTableProps>) {
+}: Readonly<DataTableProps>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [showFilters, setShowFilters] = useState(false);

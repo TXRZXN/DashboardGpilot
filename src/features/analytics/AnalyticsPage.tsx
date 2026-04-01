@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { Box, Typography, Grid, Alert, Skeleton } from "@mui/material";
 import { RiskMetrics } from "@/features/analytics/components/risk-metrics";
-import { MarginGauge } from "@/features/analytics/components/margin-gauge";
+import { MarginGauge } from "@/shared/ui/margin-gauge";
 import { AssetExposure } from "@/features/analytics/components/asset-exposure";
 import { useAnalyticsData } from "@/features/analytics/hooks";
 

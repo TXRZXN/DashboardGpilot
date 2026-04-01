@@ -51,7 +51,8 @@ async function handleRequest(
     
     // ประกอบ Full URL สำหรับ Backend
     const fullPath = finalPathSegments.join("/");
-    const targetUrl = `${targetBaseUrl}/${fullPath}${queryString ? `?${queryString}` : ""}`;
+    const querySuffix = queryString ? `?${queryString}` : "";
+    const targetUrl = `${targetBaseUrl}/${fullPath}${querySuffix}`;
 
     // เตรียม Headers
     const headers = new Headers();
@@ -78,10 +79,17 @@ async function handleRequest(
       return new NextResponse(text, { status: response.status, statusText: response.statusText });
     }
   } catch (error) {
-    console.error("Gateway Proxy Error:", error);
+    // ❌ ไม่ใช้ console.error ตาม Global Rules — Error จะถูก return ใน response แทน
     return NextResponse.json(
-      { success: false, error: "Gateway Proxy Error", detail: String(error) },
-      { status: 500 }
+      {
+        success: false,
+        error: {
+          code: "GATEWAY_PROXY_ERROR",
+          message: "Gateway Proxy Error",
+          details: [{ message: String(error) }],
+        },
+      },
+      { status: 502 }
     );
   }
 }

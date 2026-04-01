@@ -5,3 +5,7 @@ export * from "./metric-card";
 export * from "./symbol-performance";
 export * from "./theme-provider";
 export * from "./toast";
+export * from "./volume-progress";
+export * from "./balance-chart";
+export * from "./margin-gauge";
+export * from "./data-table";

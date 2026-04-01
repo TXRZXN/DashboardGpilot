@@ -11,8 +11,8 @@ export const isProfitSharing = (deal: Deal): boolean => {
  * คำนวณกำไรรวมของ Deal (Profit + Commission + Swap)
  */
 export const getNetProfit = (deal: Deal): number => {
-  // ใช้ net_profit จากข้อมูลโดยตรงถ้ามี
-  if (deal.net_profit !== undefined && deal.net_profit !== null) return deal.net_profit;
+  // ใช้ netProfit จากข้อมูลโดยตรงถ้ามี
+  if (deal.netProfit !== undefined && deal.netProfit !== null) return deal.netProfit;
   return (deal.profit || 0) + (deal.commission || 0) + (deal.swap || 0) + (deal.fee || 0);
 };
 
@@ -35,19 +35,19 @@ export const getGroupedTrades = (deals: readonly Deal[]): Deal[] => {
     d.symbol && 
     d.symbol !== "" && 
     d.type !== "BALANCE" && 
-    d.position_id > 0 && 
+    d.positionId > 0 && 
     !isProfitSharing(d)
   );
 
   // แยกรายการ BALANCE ออกมาเพื่อใช้ใน Equity Curve (แต่ไม่นับเป็นเทรด)
   const balanceDeals = deals.filter((d) => d.type === "BALANCE" || !d.symbol || d.symbol === "");
 
-  // ใช้ Map ในการ Group ตาม position_id
+  // ใช้ Map ในการ Group ตาม positionId
   const positionMap = new Map<number, Deal[]>();
 
   tradingDeals.forEach((deal) => {
-    // ถ้า position_id เป็น 0 (อาจจะเกิดกับข้อมูลบางประเภท) ให้ใช้ ticket แทนเพื่อให้ไม่พยายามรวมกันมั่วๆ
-    const pid = deal.position_id || deal.ticket;
+    // ถ้า positionId เป็น 0 (อาจจะเกิดกับข้อมูลบางประเภท) ให้ใช้ ticket แทนเพื่อให้ไม่พยายามรวมกันมั่วๆ
+    const pid = deal.positionId || deal.ticket;
     if (!positionMap.has(pid)) {
       positionMap.set(pid, []);
     }
@@ -60,9 +60,9 @@ export const getGroupedTrades = (deals: readonly Deal[]): Deal[] => {
     if (pDeals.length === 0) return;
 
     // เรียงตามเวลา msc (ถ้าไม่มีให้ใช้กาลเวลามิลลิวินาที)
-    const sorted = [...pDeals].sort((a, b) => (a.time_msc || 0) - (b.time_msc || 0));
+    const sorted = [...pDeals].sort((a, b) => (a.timeMsc || 0) - (b.timeMsc || 0));
     const first = sorted[0];
-    const last = sorted[sorted.length - 1];
+    const last = sorted.at(-1)!;
 
     // คำนวณยอดรวม (Aggregated Stats)
     let totalProfit = 0;
@@ -77,9 +77,7 @@ export const getGroupedTrades = (deals: readonly Deal[]): Deal[] => {
       totalCommission += d.commission || 0;
       totalSwap += d.swap || 0;
       totalFee += d.fee || 0;
-      totalNetProfit += (d.net_profit !== undefined && d.net_profit !== null) 
-        ? d.net_profit 
-        : (d.profit || 0) + (d.commission || 0) + (d.swap || 0) + (d.fee || 0);
+      totalNetProfit += d.netProfit ?? (d.profit || 0) + (d.commission || 0) + (d.swap || 0) + (d.fee || 0);
       
       if (d.volume > maxVolume) maxVolume = d.volume;
     });
@@ -91,13 +89,13 @@ export const getGroupedTrades = (deals: readonly Deal[]): Deal[] => {
       commission: totalCommission,
       swap: totalSwap,
       fee: totalFee,
-      net_profit: totalNetProfit,
+      netProfit: totalNetProfit,
       volume: maxVolume,
       // ใช้ Reason จากไม้ปิดสุดท้าย (เช่น SL, TP)
       reason: last.reason || first.reason || "",
       // เก็บเวลาปิด
       time: last.time,
-      time_msc: last.time_msc || first.time_msc || 0,
+      timeMsc: last.timeMsc || first.timeMsc || 0,
       // เก็บราคาปิด
       price: last.price,
       // ระบุว่านี่คือไม้ที่ปิดแล้ว (ถ้ามี OUT)
@@ -207,7 +205,12 @@ export const calculateProfitFactorDetails = (deals: readonly Deal[]) => {
   const grossProfit = winningTrades.reduce((sum, d) => sum + getNetProfit(d), 0);
   const grossLoss = Math.abs(losingTrades.reduce((sum, d) => sum + getNetProfit(d), 0));
 
-  const profitFactor = grossLoss === 0 ? (grossProfit > 0 ? 99.99 : 0) : grossProfit / grossLoss;
+  let profitFactor: number;
+  if (grossLoss === 0) {
+    profitFactor = grossProfit > 0 ? 99.99 : 0;
+  } else {
+    profitFactor = grossProfit / grossLoss;
+  }
   
   return { profitFactor, grossProfit, grossLoss };
 };
@@ -255,12 +258,12 @@ export const calculateHealthScore = (winRate: number, profitFactor: number, maxD
   // 1. Win Rate Score (0-100% -> 0-1.0)
   const wrScore = winRate / 100;
 
-  // 2. Profit Factor Score (Map 0.0-3.0 -> 0.0-1.0, Cap at 3.0)
-  const pfScore = Math.min(profitFactor / 3.0, 1.0);
+  // 2. Profit Factor Score (Map 0-3 -> 0-1, Cap at 3)
+  const pfScore = Math.min(profitFactor / 3, 1);
 
-  // 3. Drawdown Score (0-50% -> 1.0-0.0, If DD >= 50% score is 0)
+  // 3. Drawdown Score (0-50% -> 1-0, If DD >= 50% score is 0)
   // พอร์ตที่ DD ต่ำจะได้คะแนนส่วนนี้สูง
-  const ddScore = Math.max(0, 1.0 - (maxDrawdown / 50.0));
+  const ddScore = Math.max(0, 1 - (maxDrawdown / 50));
 
   const totalScore = (wrScore * 0.4) + (pfScore * 0.4) + (ddScore * 0.2);
   return Math.round(totalScore * 100);

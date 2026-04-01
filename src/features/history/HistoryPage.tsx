@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Alert } from "@mui/material";
-import { TradeTable } from "@/features/history/components";
+import { DataTable } from "@/shared/ui";
 import { useHistoryData } from "@/features/history/hooks";
 
 export default function HistoryPage() {
@@ -54,7 +54,7 @@ export default function HistoryPage() {
         </Alert>
       )}
 
-      <TradeTable
+      <DataTable
         loading={loading}
         deals={deals}
         totals={totals}
