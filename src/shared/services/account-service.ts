@@ -29,7 +29,7 @@ export const AccountService = {
       return {
         success: false,
         data: null,
-        error: errorMsg,
+        error: { code: 'FETCH_ERROR', message: errorMsg },
       };
     }
   },

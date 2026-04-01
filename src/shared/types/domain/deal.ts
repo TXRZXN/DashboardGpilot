@@ -20,8 +20,3 @@ export interface Deal {
   readonly time: string; // ISO 8601 string (e.g., "2024-03-26T15:30:00")
   readonly timeMsc: number;
 }
-
-export interface TradesHistoryResponse {
-  readonly total: number;
-  readonly data: readonly Deal[];
-}

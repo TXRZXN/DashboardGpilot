@@ -3,12 +3,12 @@
 // ---------------------------------------------
 
 /**
- * โครงสร้าง Error กรณี Validation Fail (422)
+ * โครงสร้าง Error แบบละเอียด (ตามมาตรฐาน AntiGravity)
  */
-export interface ValidationErrorDetail {
-  readonly loc: readonly (string | number)[];
-  readonly msg: string;
-  readonly type: string;
+export interface ErrorDetail {
+  code: string;
+  message: string;
+  details?: Record<string, any>[] | null;
 }
 
 /**
@@ -18,7 +18,12 @@ export interface ValidationErrorDetail {
 export interface ServiceResponse<T> {
   readonly success: boolean;
   readonly data: T | null;
-  readonly error: string | readonly ValidationErrorDetail[] | any | null;
+  readonly error: ErrorDetail | null;
+  readonly meta?: {
+    total: number;
+    page?: number;
+    limit?: number;
+  };
 }
 
 /**
@@ -42,6 +47,8 @@ export interface TradeRequest {
   type?: string | null;
   entry?: string | null;
   comment?: string | null;
+  pageNumber?: number;
+  pageSize?: number;
 }
 
 // ---------------------------------------------
@@ -138,6 +145,19 @@ export interface GroupedDeal {
   readonly comment: string;
   readonly openTime: string;   // ISO 8601
   readonly closeTime: string;  // ISO 8601
+}
+
+/**
+ * โครงสร้าง Response สำหรับรายการเทรดแบบกลุ่ม (พร้อมสถิติสรุป)
+ */
+export interface GroupedTradesResponse {
+  totalTrades: number;
+  totalVolume: number;
+  grossProfit: number;
+  grossLoss: number;
+  netProfit: number;
+  fee: number;
+  list: GroupedDeal[];
 }
 
 // ---------------------------------------------

@@ -56,9 +56,9 @@ export function useHistoryData() {
       const response = await AnalyticsService.getGroupedTrades();
 
       if (response.success && response.data) {
-        setAllTrades(response.data);
+        setAllTrades(response.data.list);
       } else {
-        setError((response.error as string) ?? "Failed to fetch trade history");
+        setError(response.error?.message ?? "Failed to fetch trade history");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");

@@ -99,12 +99,14 @@ export function useAnalyticsData() {
 
       if (perfRes.success && perfRes.data) {
         setPerfStats(perfRes.data);
-      } else {
-        setError((perfRes.error as string) ?? "Failed to fetch performance stats");
+      } else if (perfRes.error) {
+        setError(perfRes.error.message);
       }
-
+ 
       if (groupedRes.success && groupedRes.data) {
-        setGroupedTrades(groupedRes.data);
+        setGroupedTrades(groupedRes.data.list);
+      } else if (groupedRes.error) {
+        setError(groupedRes.error.message);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");

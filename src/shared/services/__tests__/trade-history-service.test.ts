@@ -14,7 +14,7 @@ describe('TradeHistoryService', () => {
   });
 
   it('getHistory_WithValidArgs_CallsApiClientWithCorrectArgs', async () => {
-    const mockData = { total: 1, data: [] as any[] };
+    const mockData = [] as any[];
     vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData });
 
     const result = await TradeHistoryService.getHistory();
@@ -26,7 +26,7 @@ describe('TradeHistoryService', () => {
   });
 
   it('getHistory_WithParams_PassesParamsToApiClient', async () => {
-    const mockData = { total: 1, data: [] as any[] };
+    const mockData = [] as any[];
     vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData });
     const params = { from_date: '2024-01-01' };
 
@@ -42,6 +42,9 @@ describe('TradeHistoryService', () => {
     const result = await TradeHistoryService.getHistory();
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe('เกิดข้อผิดพลาดในการดึงข้อมูลประวัติการทำรายการ');
+    expect(result.error).toEqual({
+      code: 'FETCH_ERROR',
+      message: 'เกิดข้อผิดพลาดในการดึงข้อมูลประวัติการทำรายการ',
+    });
   });
 });

@@ -1,73 +1,55 @@
-"use client";
-
-import { useMemo } from "react";
-import { getNetProfit, isProfitSharing } from "@/features/analytics/utils/performance-utils";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTradeData } from "@/shared/providers/trade-data-provider";
+import { CashflowService } from "@/shared/services/cashflow-service";
+import { AnalyticsService } from "@/shared/services/analytics-service";
+import { useApiHealth } from "@/shared/providers/api-health-provider";
+import { mapAccountData } from "../utils/account-calculations";
+import type { CashflowSummary, DashboardSummary } from "@/shared/types/api";
 
 export function useAccountData() {
-  const { account, deals, loading, error, refreshData } = useTradeData();
+  const { account, loading: globalLoading, error: globalError, refreshData: globalRefresh } = useTradeData();
+  const { isHealthy } = useApiHealth();
 
-  const financialStats = useMemo(() => {
-    const tradeDeals = deals.filter(d => d.symbol && d.symbol !== "" && d.type !== "BALANCE" && !isProfitSharing(d));
-    const balanceDeals = deals.filter(d => d.type === 'BALANCE' || isProfitSharing(d));
-    
-    // 1. ฝากทั้งหมด (Deposit)
-    const totalDeposits = balanceDeals
-      .filter(d => d.type === 'BALANCE' && (d.profit || 0) > 0)
-      .reduce((sum, d) => sum + (d.profit || 0), 0);
+  const [cashflow, setCashflow] = useState<CashflowSummary | null>(null);
+  const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    // 2. ถอนทั้งหมด (Withdrawal - ไม่รวม PF)
-    const totalWithdrawals = balanceDeals
-      .filter(d => d.type === 'BALANCE' && (d.profit || 0) < 0 && !isProfitSharing(d))
-      .reduce((sum, d) => sum + Math.abs(d.profit || 0), 0);
-    
-    // 3. Profit Sharing ทั้งหมด (PF)
-    const totalProfitSharing = balanceDeals
-      .filter(d => isProfitSharing(d))
-      .reduce((sum, d) => sum + Math.abs(d.profit || 0), 0);
+  const fetchData = useCallback(async () => {
+    if (!isHealthy) return;
+    try {
+      setLoading(true);
+      setError(null);
 
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // Week: วันจันทร์ล่าสุด
-    const dayOfWeek = now.getDay();
-    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekStart = new Date(todayStart);
-    weekStart.setDate(todayStart.getDate() + diffToMonday);
-    
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const [cashRes, dashRes] = await Promise.all([
+        CashflowService.getCashflowSummary(),
+        AnalyticsService.getDashboardSummary(),
+      ]);
 
-    const stats = {
-      today: 0,
-      week: 0,
-      month: 0,
-      grossTradeTotal: 0,
-      deposits: totalDeposits,
-      withdrawals: totalWithdrawals,
-      profitSharing: totalProfitSharing,
-      netGain: 0
-    };
+      if (cashRes.success && cashRes.data) {
+        setCashflow(cashRes.data);
+      } else if (cashRes.error) {
+        setError(cashRes.error.message);
+      }
 
-    tradeDeals.forEach(deal => {
-      const dealTime = new Date(deal.time);
-      const profit = getNetProfit(deal);
+      if (dashRes.success && dashRes.data) {
+        setDashboard(dashRes.data);
+      } else if (dashRes.error) {
+        setError(dashRes.error.message);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unexpected error");
+    } finally {
+      setLoading(false);
+    }
+  }, [isHealthy]);
 
-      if (dealTime >= todayStart) stats.today += profit;
-      if (dealTime >= weekStart) stats.week += profit;
-      if (dealTime >= monthStart) stats.month += profit;
-      stats.grossTradeTotal += profit;
-    });
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-    // กำไรสุทธิหลังหักส่วนแบ่ง (Gross Trade Profit - Profit Sharing)
-    stats.netGain = stats.grossTradeTotal - totalProfitSharing;
-
-    return stats;
-  }, [deals]);
-
-  const realBalance = useMemo(() => {
-    // ยอดคงเหลือจริง (Deposit - Withdrawals - PF + Trade Profit)
-    return deals.reduce((sum, d) => sum + (d.profit || 0) + (d.commission || 0) + (d.swap || 0) + (d.fee || 0), 0);
-  }, [deals]);
+  // ใช้ Utility ในการ Map ข้อมูล (Separation of Concerns)
+  const stats = useMemo(() => mapAccountData(cashflow, dashboard), [cashflow, dashboard]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -76,23 +58,25 @@ export function useAccountData() {
     }).format(value);
   };
 
-  const referralUrl = `https://gpilot.com/register?ref=${account?.login || 'mock_ref_1234'}`;
+  const referralUrl = `https://gpilot.com/register?ref=${account?.login || "mock_ref_1234"}`;
 
   return {
-    loading,
-    error,
+    loading: loading || globalLoading,
+    error: error ?? globalError,
     account,
-    realBalance,
-    profitToday: financialStats.today,
-    profitWeek: financialStats.week,
-    profitMonth: financialStats.month,
-    grossTradeProfit: financialStats.grossTradeTotal,
-    totalDeposits: financialStats.deposits,
-    totalWithdrawals: financialStats.withdrawals,
-    totalProfitSharing: financialStats.profitSharing,
-    netProfit: financialStats.netGain,
+    realBalance: stats.balance,
+    profitToday: stats.profitToday,
+    profitWeek: stats.profitWeek,
+    profitMonth: stats.profitMonth,
+    grossTradeProfit: stats.profitMonth, // ชั่วคราว ใช้ก้อนเดียวกันหรือปรับตามความเหมาะสม
+    totalDeposits: stats.deposits,
+    totalWithdrawals: stats.withdrawals,
+    totalProfitSharing: stats.profitSharing,
+    netProfit: stats.netProfit,
     formatCurrency,
     referralUrl,
-    refreshData
+    refreshData: async () => {
+      await Promise.all([globalRefresh(), fetchData()]);
+    },
   };
 }

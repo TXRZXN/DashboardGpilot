@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { AnalyticsService } from "@/shared/services/analytics-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
 import { useTradeData } from "@/shared/providers/trade-data-provider";
+import { getMostRecentMonday, toFullISOString } from "@/shared/utils/date-utils";
 import type { DashboardSummary } from "@/shared/types/api";
 
 /**
@@ -25,12 +26,15 @@ export function useDashboardData() {
       setLoading(true);
       setError(null);
 
-      const response = await AnalyticsService.getDashboardSummary();
+      const monday = getMostRecentMonday();
+      const response = await AnalyticsService.getDashboardSummary({ 
+        from_date: toFullISOString(monday) 
+      });
 
       if (response.success && response.data) {
         setSummary(response.data);
       } else {
-        setError((response.error as string) ?? "Failed to fetch dashboard summary");
+        setError(response.error?.message ?? "Failed to fetch dashboard summary");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");

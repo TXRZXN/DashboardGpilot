@@ -41,14 +41,14 @@ export function TradeDataProvider({ children }: { children: React.ReactNode }) {
 
       if (accRes.success && accRes.data) {
         setAccount(accRes.data);
-      } else if (!accRes.success) {
-        setError(accRes.error as string || "Failed to fetch account info");
+      } else if (accRes.error) {
+        setError(accRes.error.message || "Failed to fetch account info");
       }
 
       if (historyRes.success && historyRes.data) {
-        setDeals(Array.isArray(historyRes.data.data) ? historyRes.data.data : []);
-      } else if (!historyRes.success) {
-        setError(historyRes.error as string || "Failed to fetch trade history");
+        setDeals(historyRes.data);
+      } else if (historyRes.error) {
+        setError(historyRes.error.message || "Failed to fetch trade history");
       }
 
       setIsInitialized(true);

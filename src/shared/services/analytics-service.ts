@@ -2,7 +2,7 @@ import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
 import { ENDPOINTS } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
-import type { ServiceResponse, PerformanceStats, GroupedDeal, DashboardSummary, TradeRequest } from '@/shared/types/api';
+import type { ServiceResponse, PerformanceStats, DashboardSummary, TradeRequest, GroupedTradesResponse } from '@/shared/types/api';
 
 const logger = createLogger('AnalyticsService');
 
@@ -27,17 +27,17 @@ export const AnalyticsService = {
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง performance stats';
       logger.error('Failed to fetch performance stats', e instanceof Error ? e : String(e));
-      return { success: false, data: null, error: errorMsg };
+      return { success: false, data: null, error: { code: 'FETCH_ERROR', message: errorMsg } };
     }
   },
 
   /**
    * ดึง Trade History ที่ grouped by position (round-turn)
    */
-  getGroupedTrades: async (params?: TradeRequest): Promise<ServiceResponse<GroupedDeal[]>> => {
+  getGroupedTrades: async (params?: TradeRequest): Promise<ServiceResponse<GroupedTradesResponse>> => {
     try {
       logger.info('Fetching grouped trades', { params });
-      return await apiClient<ServiceResponse<GroupedDeal[]>>(
+      return await apiClient<ServiceResponse<GroupedTradesResponse>>(
         ENDPOINTS.TRADES_GROUPED,
         undefined,
         params as any,
@@ -45,7 +45,7 @@ export const AnalyticsService = {
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง grouped trades';
       logger.error('Failed to fetch grouped trades', e instanceof Error ? e : String(e));
-      return { success: false, data: null, error: errorMsg };
+      return { success: false, data: null, error: { code: 'FETCH_ERROR', message: errorMsg } };
     }
   },
 
@@ -63,7 +63,7 @@ export const AnalyticsService = {
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง dashboard summary';
       logger.error('Failed to fetch dashboard summary', e instanceof Error ? e : String(e));
-      return { success: false, data: null, error: errorMsg };
+      return { success: false, data: null, error: { code: 'FETCH_ERROR', message: errorMsg } };
     }
   },
 };

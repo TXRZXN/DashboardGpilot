@@ -2,7 +2,7 @@ import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
 import { ENDPOINTS } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
-import type { TradesHistoryResponse, ServiceResponse, TradeRequest } from '@/shared/types/api';
+import type { ServiceResponse, TradeRequest, Deal } from '@/shared/types/api';
 
 const logger = createLogger('TradeHistoryService');
 
@@ -13,17 +13,15 @@ export const TradeHistoryService = {
   /**
    * ดึงประวัติการเทรดแบบเรียลไทม์จาก Backend
    */
-  getHistory: async (params?: TradeRequest): Promise<ServiceResponse<TradesHistoryResponse>> => {
+  getHistory: async (params?: TradeRequest): Promise<ServiceResponse<Deal[]>> => {
     try {
       logger.info('Fetching trade history', { params });
       
-      // apiClient จะคืนค่า { success, data, error } ที่ส่งมาจาก Backend โดยตรง
-      const response = await apiClient<ServiceResponse<TradesHistoryResponse>>(
+      const response = await apiClient<ServiceResponse<Deal[]>>(
         ENDPOINTS.TRADES, 
         undefined, 
         params as any
       );
-      
       
       return response;
     } catch (e: unknown) {
@@ -36,7 +34,7 @@ export const TradeHistoryService = {
       return {
         success: false,
         data: null,
-        error: errorMsg,
+        error: { code: 'FETCH_ERROR', message: errorMsg },
       };
     }
   },
