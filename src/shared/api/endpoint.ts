@@ -34,8 +34,14 @@ export const SUB_ENDPOINTS = {
   AUTH_REGISTER: `${API_GATEWAY_SUB}/api/v1/auth/register`,
   /** เข้าสู่ระบบ */
   AUTH_LOGIN: `${API_GATEWAY_SUB}/api/v1/auth/login`,
+  /** เปลี่ยนรหัสผ่านเว็บ */
+  AUTH_UPDATE_PASSWORD: `${API_GATEWAY_SUB}/api/v1/auth/password`,
+  /** เปลี่ยนรหัสผ่าน MT5 */
+  AUTH_UPDATE_MT5_PASSWORD: `${API_GATEWAY_SUB}/api/v1/auth/mt5-password`,
   /** ดึงข้อมูลเทรดที่ Sync แล้ว */
   TRADES: `${API_GATEWAY_SUB}/api/v1/trades`,
+  /** สั่ง Sync ข้อมูลการเทรด Referral (Manual) */
+  TRADES_SYNC_REFERRALS: `${API_GATEWAY_SUB}/api/v1/trades/sync/referrals`,
 } as const;
 
 /**

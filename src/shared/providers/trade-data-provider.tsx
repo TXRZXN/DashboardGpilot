@@ -46,9 +46,19 @@ export function TradeDataProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (historyRes.success && historyRes.data) {
-        setDeals(historyRes.data);
+        // Double Check: Ensure deals are always an array (Defense in Depth)
+        if (Array.isArray(historyRes.data)) {
+          setDeals(historyRes.data);
+        } else if (typeof historyRes.data === 'object' && Array.isArray((historyRes.data as any).data)) {
+          // Fallback support for nested structure if service layer was bypassed
+          setDeals((historyRes.data as any).data);
+        } else {
+          setDeals([]);
+          console.error("Trade history data is not an array:", historyRes.data);
+        }
       } else if (historyRes.error) {
         setError(historyRes.error.message || "Failed to fetch trade history");
+        setDeals([]); // Ensure state is reset on error
       }
 
       setIsInitialized(true);

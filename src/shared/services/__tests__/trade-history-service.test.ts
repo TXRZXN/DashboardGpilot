@@ -15,7 +15,7 @@ describe('TradeHistoryService', () => {
 
   it('getHistory_WithValidArgs_CallsApiClientWithCorrectArgs', async () => {
     const mockData = [] as any[];
-    vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData });
+    vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData, error: null });
 
     const result = await TradeHistoryService.getHistory();
 
@@ -27,7 +27,7 @@ describe('TradeHistoryService', () => {
 
   it('getHistory_WithParams_PassesParamsToApiClient', async () => {
     const mockData = [] as any[];
-    vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData });
+    vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData, error: null });
     const params = { from_date: '2024-01-01' };
 
     const result = await TradeHistoryService.getHistory(params);

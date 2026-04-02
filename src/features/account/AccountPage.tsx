@@ -10,7 +10,13 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { useAccountData } from "./hooks/use-account-data";
-import { ProfileCard, FinancialSummary, ReferralCard } from "./components";
+import { 
+  ProfileCard, 
+  FinancialSummary, 
+  ReferralCard, 
+  PasswordManagementCard,
+  ReferralSyncCard
+} from "./components";
 
 export function AccountPage() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -73,6 +79,8 @@ export function AccountPage() {
               netProfit={netProfit}
               formatCurrency={formatCurrency}
             />
+            <PasswordManagementCard />
+            <ReferralSyncCard />
           </Stack>
         </Grid>
 

@@ -12,7 +12,7 @@ interface ExecutionLogProps {
 }
 
 export function ExecutionLog({ deals: propDeals, loading }: Readonly<ExecutionLogProps>) {
-  const recentTrades = (propDeals || [])
+  const recentTrades = (Array.isArray(propDeals) ? propDeals : [])
     .filter(d => d.type !== 'BALANCE')
     .slice(0, 5) // Show latest 5
     .map(deal => ({

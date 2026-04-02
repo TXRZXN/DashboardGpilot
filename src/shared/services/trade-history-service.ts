@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
-import { ENDPOINTS } from '@/shared/api/endpoint';
+import { ENDPOINTS, SUB_ENDPOINTS } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
 import type { ServiceResponse, TradeRequest, Deal } from '@/shared/types/api';
 
@@ -8,22 +8,36 @@ const logger = createLogger('TradeHistoryService');
 
 /**
  * Service สำหรับจัดการประวัติการเทรด (Deals)
+ * ครอบคลุมทั้ง Backend-Main (Real-time) และ Backend-Sub (Synced Referral)
  */
 export const TradeHistoryService = {
   /**
-   * ดึงประวัติการเทรดแบบเรียลไทม์จาก Backend
+   * ดึงประวัติการเทรดแบบเรียลไทม์จาก Backend-Main
    */
   getHistory: async (params?: TradeRequest): Promise<ServiceResponse<Deal[]>> => {
     try {
       logger.info('Fetching trade history', { params });
       
-      const response = await apiClient<ServiceResponse<Deal[]>>(
+      const response = await apiClient<ServiceResponse<any>>(
         ENDPOINTS.TRADES, 
         undefined, 
         params as any
       );
       
-      return response;
+      let normalizedDeals: Deal[] = [];
+      
+      if (response.success && response.data) {
+        if (Array.isArray(response.data)) {
+          normalizedDeals = response.data;
+        } else if (typeof response.data === 'object' && Array.isArray(response.data.data)) {
+          normalizedDeals = response.data.data;
+        }
+      }
+
+      return {
+        ...response,
+        data: normalizedDeals,
+      };
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError 
         ? e.message 
@@ -33,9 +47,47 @@ export const TradeHistoryService = {
       
       return {
         success: false,
-        data: null,
+        data: [],
         error: { code: 'FETCH_ERROR', message: errorMsg },
       };
     }
   },
+
+  /**
+   * ดึงประวัติการเทรดของเพื่อน (Referral) ที่ Sync แล้วจาก Backend-Sub
+   */
+  getReferralHistory: async (): Promise<ServiceResponse<any[]>> => {
+    try {
+      logger.info('Fetching referral synced trades');
+      const response = await apiClient<ServiceResponse<any>>(SUB_ENDPOINTS.TRADES);
+      return response;
+    } catch (e) {
+      logger.error('Failed to fetch referral history', e instanceof Error ? e : String(e));
+      return {
+        success: false,
+        data: null,
+        error: { code: 'FETCH_ERROR', message: 'ไม่สามารถดึงข้อมูล Referral ได้' }
+      };
+    }
+  },
+
+  /**
+   * สั่ง Sync ข้อมูลการเทรด Referral ใหม่ (Manual)
+   */
+  syncReferralTrades: async (): Promise<ServiceResponse<{ successCount: number; failedUsers: any[] }>> => {
+    try {
+      logger.info('Manually triggering referral sync');
+      const response = await apiClient<ServiceResponse<any>>(SUB_ENDPOINTS.TRADES_SYNC_REFERRALS, {
+        method: 'POST'
+      });
+      return response;
+    } catch (e) {
+      logger.error('Failed to sync referrals', e instanceof Error ? e : String(e));
+      return {
+        success: false,
+        data: null,
+        error: { code: 'SYNC_ERROR', message: 'ไม่สามารถเชื่อมต่อระบบซิงค์ได้' }
+      };
+    }
+  }
 };

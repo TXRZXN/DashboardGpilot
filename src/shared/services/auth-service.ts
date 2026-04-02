@@ -31,7 +31,11 @@ export const AuthService = {
       const encryptionKey = process.env.NEXT_PUBLIC_MT5_ENCRYPTION_KEY || '';
       if (!encryptionKey) {
         logger.error('Encryption key not configured');
-        return { success: false, data: null, error: 'ความล้มเหลวในการกำหนดค่าระบบเข้ารหัส' };
+        return { 
+          success: false, 
+          data: null, 
+          error: { code: 'CONFIG_ERROR', message: 'ความล้มเหลวในการกำหนดค่าระบบเข้ารหัส' } 
+        };
       }
 
       // 2. เข้ารหัสรหัสผ่าน MT5 ด้วย AES-256-GCM
@@ -66,7 +70,7 @@ export const AuthService = {
       return {
         success: false,
         data: null,
-        error: errorMsg
+        error: { code: 'REGISTRATION_ERROR', message: errorMsg }
       };
     }
   },
@@ -105,7 +109,61 @@ export const AuthService = {
       return {
         success: false,
         data: null,
-        error: errorMsg
+        error: { code: 'LOGIN_ERROR', message: errorMsg }
+      };
+    }
+  },
+
+  /**
+   * เปลี่ยนรหัสผ่านเว็บ
+   */
+  updatePassword: async (newPassword: string): Promise<ServiceResponse<void>> => {
+    try {
+      logger.info('Updating web password');
+      await apiClient(SUB_ENDPOINTS.AUTH_UPDATE_PASSWORD, {
+        method: 'PATCH',
+        body: JSON.stringify({ new_password: newPassword }),
+      });
+      return { success: true, data: undefined, error: null };
+    } catch (error) {
+      const errorMsg = error instanceof ApiError ? error.message : 'ไม่สามารถเปลี่ยนรหัสผ่านได้';
+      logger.error('Update password failed', error instanceof Error ? error : String(error));
+      return { 
+        success: false, 
+        data: null, 
+        error: { code: 'UPDATE_PASSWORD_ERROR', message: errorMsg } 
+      };
+    }
+  },
+
+  /**
+   * เปลี่ยนรหัสผ่าน MT5 (พร้อมเข้ารหัส)
+   */
+  updateMT5Password: async (newPlainPassword: string): Promise<ServiceResponse<void>> => {
+    try {
+      logger.info('Updating MT5 password');
+      const encryptionKey = process.env.NEXT_PUBLIC_MT5_ENCRYPTION_KEY || '';
+      if (!encryptionKey) {
+          return { 
+            success: false, 
+            data: null, 
+            error: { code: 'CONFIG_ERROR', message: 'ระบบเข้ารหัสไม่ได้กำหนดค่า' } 
+          };
+      }
+
+      const encryptedPassword = await CryptoUtils.encrypt(newPlainPassword, encryptionKey);
+      await apiClient(SUB_ENDPOINTS.AUTH_UPDATE_MT5_PASSWORD, {
+        method: 'PATCH',
+        body: JSON.stringify({ encrypted_password: encryptedPassword }),
+      });
+      return { success: true, data: undefined, error: null };
+    } catch (error) {
+      const errorMsg = error instanceof ApiError ? error.message : 'ไม่สามารถเปลี่ยนรหัสผ่าน MT5 ได้';
+      logger.error('Update MT5 password failed', error instanceof Error ? error : String(error));
+      return { 
+        success: false, 
+        data: null, 
+        error: { code: 'UPDATE_MT5_PASSWORD_ERROR', message: errorMsg } 
       };
     }
   }

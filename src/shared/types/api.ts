@@ -72,6 +72,9 @@ export interface PerformanceStats {
   readonly profitFactor: number;
   readonly grossProfit: number;
   readonly grossLoss: number;
+  readonly totalVolume: number;
+  readonly netProfit: number;
+  readonly fee: number;
   readonly sharpeRatio: number;
   readonly maxDrawdownPct: number;
   readonly maxDrawdownAmount: number;
