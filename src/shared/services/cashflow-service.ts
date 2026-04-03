@@ -25,7 +25,7 @@ export const CashflowService = {
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง cashflow summary';
       logger.error('Failed to fetch cashflow summary', e instanceof Error ? e : String(e));
-      return { success: false, data: null, error: errorMsg };
+      return { success: false, data: null, error: { code: 'FETCH_ERROR', message: errorMsg } };
     }
   },
 };

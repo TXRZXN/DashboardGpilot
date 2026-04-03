@@ -10,7 +10,6 @@ import {
   Stack, 
   IconButton, 
   InputAdornment,
-  Divider,
   Link,
   Checkbox,
   FormControlLabel

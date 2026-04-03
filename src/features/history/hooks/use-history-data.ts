@@ -126,7 +126,6 @@ export function useHistoryData() {
     });
 
     return result;
-    return result;
   }, [allTrades, symbolFilter, sortField, sortDirection, typeFilter, startDate, endDate]);
 
   const totals = useMemo<HistoryTotals>(() => {

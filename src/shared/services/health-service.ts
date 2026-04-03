@@ -18,7 +18,7 @@ export const HealthService = {
       logger.debug('Checking API health');
       const response = await apiClient<HealthResponse>(ENDPOINTS.HEALTH);
       
-      if (response.success === 'ok') {
+      if (response.success) {
         logger.debug('API health check passed', { status: response.data.status });
       } else {
         logger.warn('API health check returned unsuccessful status', { error: response.error });
@@ -30,7 +30,7 @@ export const HealthService = {
       logger.error('API health check failed', e instanceof Error ? e : String(e));
       
       return {
-        success: 'failed',
+        success: false,
         data: { status: 'down' },
         error: errorMsg,
       };

@@ -31,7 +31,7 @@ export interface ServiceResponse<T> {
  * Interface สำหรับการ Check Health ของ API
  */
 export interface HealthResponse {
-  readonly success: string;
+  readonly success: boolean;
   readonly data: {
     readonly status: string;
   };

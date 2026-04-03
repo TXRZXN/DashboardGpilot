@@ -16,15 +16,18 @@ const TradeDataContext = createContext<TradeDataContextType | undefined>(undefin
 
 // TradeDataProvider is now just a dummy provider since features handle their own fetching.
 // It is kept to prevent context errors for any existing components during transition.
+interface TradeDataProviderProps {
+  readonly children: React.ReactNode;
+}
 
-export function TradeDataProvider({ children }: { children: React.ReactNode }) {
+export function TradeDataProvider({ children }: TradeDataProviderProps) {
   const value = useMemo(() => ({
     account: null,
     deals: [],
     loading: false,
     error: null,
     isInitialized: true,
-    refreshData: async () => {},
+    refreshData: async () => { },
   }), []);
 
   return (

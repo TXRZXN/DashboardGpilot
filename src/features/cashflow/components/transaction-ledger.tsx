@@ -1,30 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { useTheme } from "@mui/material/styles";
-import { 
-  Card, 
-  CardContent, 
-  Box, 
-  Typography, 
-  Chip, 
-  Skeleton, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
+import {
+  Card,
+  CardContent,
+  Box,
+  Typography,
+  Chip,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TablePagination,
   Paper,
   Avatar
 } from "@mui/material";
-import { 
-  CallReceived as CallReceivedIcon, 
-  CallMade as CallMadeIcon, 
-  CheckCircle as CheckCircleIcon, 
-  AccessTime as AccessTimeIcon, 
-  Cancel as CancelIcon 
+import {
+  CallReceived as CallReceivedIcon,
+  CallMade as CallMadeIcon,
+  CheckCircle as CheckCircleIcon,
+  AccessTime as AccessTimeIcon,
+  Cancel as CancelIcon
 } from "@mui/icons-material";
 import type { Transaction } from "../hooks/use-cashflow-data";
 
@@ -44,8 +43,8 @@ const statusConfig = {
   failed: { icon: CancelIcon, color: "#EF4444", bgColor: "rgba(239, 68, 68, 0.2)" },
 };
 
-export function TransactionLedger({ 
-  loading, 
+export function TransactionLedger({
+  loading,
   transactions,
   page = 1,
   limit = 10,
@@ -77,7 +76,7 @@ export function TransactionLedger({
   };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onLimitChange?.(parseInt(event.target.value, 10));
+    onLimitChange?.(Number.parseInt(event.target.value, 10));
     onPageChange?.(1);
   };
 
@@ -112,7 +111,7 @@ export function TransactionLedger({
           </Typography>
         </Box>
 
-        <TableContainer component={Paper} elevation={0} sx={{ 
+        <TableContainer component={Paper} elevation={0} sx={{
           bgcolor: 'transparent',
           border: '1px solid',
           borderColor: 'divider',
@@ -148,14 +147,14 @@ export function TransactionLedger({
                           sx={{
                             width: 32,
                             height: 32,
-                            bgcolor: 
+                            bgcolor:
                               tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal" ? "rgba(239, 68, 68, 0.15)" :
-                              tx.type.toLowerCase() === "deposit" ? "rgba(16, 185, 129, 0.15)" : 
-                              "rgba(255, 255, 255, 0.15)", // Fallback
-                            color: 
+                                tx.type.toLowerCase() === "deposit" ? "rgba(16, 185, 129, 0.15)" :
+                                  "rgba(255, 255, 255, 0.15)", // Fallback
+                            color:
                               tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal" ? "error.main" :
-                              tx.type.toLowerCase() === "deposit" ? "success.main" : 
-                              "text.primary",
+                                tx.type.toLowerCase() === "deposit" ? "success.main" :
+                                  "text.primary",
                           }}
                         >
                           {tx.type === "ProfitSharing" || tx.type.toLowerCase() === "withdrawal" ? (
@@ -172,7 +171,7 @@ export function TransactionLedger({
                     <TableCell sx={{ fontSize: '0.875rem' }}>{tx.comment || "-"}</TableCell>
                     <TableCell sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>{formatDate(tx.date)}</TableCell>
                     <TableCell sx={{ fontWeight: 600, fontSize: '0.875rem' }}>
-                        <Typography
+                      <Typography
                         component="span"
                         sx={{
                           fontWeight: 600,
@@ -237,27 +236,27 @@ export function TransactionLedger({
                 }}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Avatar
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          bgcolor: isOutflow ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)",
-                          color: isOutflow ? "error.main" : "success.main",
-                        }}
-                      >
-                        {isOutflow ? <CallMadeIcon sx={{ fontSize: 18 }} /> : <CallReceivedIcon sx={{ fontSize: 18 }} />}
-                      </Avatar>
-                      <Box>
-                        <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                          {tx.type === "ProfitSharing" ? "Profit Sharing" : tx.type}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          {formatDate(tx.date)}
-                        </Typography>
-                      </Box>
-                   </Box>
-                   <Typography
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        bgcolor: isOutflow ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)",
+                        color: isOutflow ? "error.main" : "success.main",
+                      }}
+                    >
+                      {isOutflow ? <CallMadeIcon sx={{ fontSize: 18 }} /> : <CallReceivedIcon sx={{ fontSize: 18 }} />}
+                    </Avatar>
+                    <Box>
+                      <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                        {tx.type === "ProfitSharing" ? "Profit Sharing" : tx.type}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {formatDate(tx.date)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Typography
                     sx={{
                       fontWeight: 700,
                       color: isOutflow ? "error.main" : "success.main"
@@ -266,7 +265,7 @@ export function TransactionLedger({
                     {isOutflow ? "-" : "+"}${tx.amount.toLocaleString()}
                   </Typography>
                 </Box>
-                
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
                     {tx.comment || "-"}

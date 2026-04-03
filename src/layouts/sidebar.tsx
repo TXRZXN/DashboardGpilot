@@ -2,8 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, IconButton } from "@mui/material";
-import { Dashboard, AccountBalanceWallet, History, Analytics, LightMode, DarkMode, Person } from "@mui/icons-material";
+import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
+import { Dashboard, AccountBalanceWallet, History, Analytics, Person } from "@mui/icons-material";
 import { useThemeMode } from "@/shared/ui";
 
 const navItems = [
@@ -16,7 +16,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { mode, toggleTheme } = useThemeMode();
+  const { mode } = useThemeMode();
   const backgroundColor = mode === "dark"
     ? "rgba(34, 211, 238, 0.15)"
     : "rgba(8, 145, 178, 0.1)";
@@ -74,7 +74,7 @@ export function Sidebar() {
                   letterSpacing: "-0.01em",
                 }}
               >
-              GPilotDashboard
+                GPilotDashboard
               </Typography>
               <Typography
                 variant="caption"
