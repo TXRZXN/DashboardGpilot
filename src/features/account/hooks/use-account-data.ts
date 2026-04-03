@@ -1,18 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTradeData } from "@/shared/providers/trade-data-provider";
-import { CashflowService } from "@/shared/services/cashflow-service";
-import { AnalyticsService } from "@/shared/services/analytics-service";
+import { AccountService } from "@/shared/services/account-service";
 import { HealthService } from "@/shared/services/health-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
-import { mapAccountData } from "../utils/account-calculations";
-import type { CashflowSummary, DashboardSummary } from "@/shared/types/api";
+import type { AccountSummary } from "@/shared/types/api";
 
 export function useAccountData() {
   const { account, loading: globalLoading, error: globalError, refreshData: globalRefresh } = useTradeData();
   const { isHealthy } = useApiHealth();
 
-  const [cashflow, setCashflow] = useState<CashflowSummary | null>(null);
-  const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,28 +19,20 @@ export function useAccountData() {
       setLoading(true);
       setError(null);
 
-      const [cashRes, dashRes, healthRes] = await Promise.all([
-        CashflowService.getCashflowSummary(),
-        AnalyticsService.getDashboardSummary(),
+      const [summaryRes, healthRes] = await Promise.all([
+        AccountService.getAccountSummary(),
         HealthService.checkHealth(),
       ]);
 
       if (healthRes.success && healthRes.data?.status === "ok") {
-        if (cashRes.success && cashRes.data) {
-          setCashflow(cashRes.data);
-        } else if (cashRes.error) {
-          setError(cashRes.error.message);
-        }
-
-        if (dashRes.success && dashRes.data) {
-          setDashboard(dashRes.data);
-        } else if (dashRes.error) {
-          setError(dashRes.error.message);
+        if (summaryRes.success && summaryRes.data) {
+          setSummary(summaryRes.data);
+        } else if (summaryRes.error) {
+          setError(summaryRes.error.message);
         }
       } else {
         setError(healthRes.error || "System health check failed. Cannot load account data.");
-        setCashflow(null);
-        setDashboard(null);
+        setSummary(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
@@ -55,9 +44,6 @@ export function useAccountData() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // ใช้ Utility ในการ Map ข้อมูล (Separation of Concerns)
-  const stats = useMemo(() => mapAccountData(cashflow, dashboard), [cashflow, dashboard]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -72,15 +58,15 @@ export function useAccountData() {
     loading: loading || globalLoading,
     error: error ?? globalError,
     account,
-    realBalance: stats.balance,
-    profitToday: stats.profitToday,
-    profitWeek: stats.profitWeek,
-    profitMonth: stats.profitMonth,
-    grossTradeProfit: stats.profitMonth, // ชั่วคราว ใช้ก้อนเดียวกันหรือปรับตามความเหมาะสม
-    totalDeposits: stats.deposits,
-    totalWithdrawals: stats.withdrawals,
-    totalProfitSharing: stats.profitSharing,
-    netProfit: stats.netProfit,
+    realBalance: summary?.balance ?? 0,
+    profitToday: summary?.profitToday ?? 0,
+    profitWeek: summary?.profitWeek ?? 0,
+    profitMonth: summary?.profitMonth ?? 0,
+    grossTradeProfit: summary?.grossTradeProfit ?? 0,
+    totalDeposits: summary?.totalDeposits ?? 0,
+    totalWithdrawals: summary?.totalWithdrawals ?? 0,
+    totalProfitSharing: summary?.totalProfitSharing ?? 0,
+    netProfit: summary?.netProfit ?? 0,
     formatCurrency,
     referralUrl,
     refreshData: async () => {

@@ -21,7 +21,7 @@
 ## ✨ Key Features (ล่าสุด)
 
 - **🔐 Secure Registration:** ระบบสมัครสมาชิกที่บังคับใช้ **Referral ID** เท่านั้น พร้อมรองรับการผูกบัญชี **MT5 ID** และ **Investor's Password** ตั้งแต่ขั้นตอนสมัคร
-- **📊 My Account Dashboard:** ส่วนจัดการบัญชีที่แสดงข้อมูลการเงินเชิงลึก (8 Metrics):
+- **📊 My Account Dashboard (Optimized):** ส่วนจัดการบัญชีที่แสดงข้อมูลการเงินเชิงลึก ทำงานด้วยความเร็วสูงผ่าน Endpoint เฉพาะ:
     - **Performance:** Today, Week, Month Trading Profit
     - **Capital Flow:** สรุปยอดฝาก (Deposits) และยอดถอน (Withdrawals) แยกจากกัน
     - **Gross vs Net:** แสดงกำไรสะสม (Gross), ส่วนแบ่งแพลตฟอร์ม (Profit Sharing - PF), และกำไรสุทธิจริงหลังแบ่ง (Net Gain)
@@ -122,8 +122,9 @@ User visits /dashboard
 
 | Service | Mock Data |
 |---------|-----------|
-| `AccountService.getAccountInfo()` | Demo account, balance $10,000 |
-| `TradeHistoryService.getHistory()` | 6 deals: XAUUSD, EURUSD, GBPUSD |
+| `AccountService.getAccountInfo()` | ข้อมูลบัญชีจำลอง, Balance $10,000 |
+| `AccountService.getAccountSummary()` | [NEW] ข้อมูลสรุปการเงินจำลองสำหรับหน้า Account |
+| `TradeHistoryService.getHistory()` | รายการเทรด 6 รายการ: XAUUSD, EURUSD, GBPUSD |
 
 ---
 

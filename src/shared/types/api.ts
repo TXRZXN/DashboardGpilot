@@ -161,6 +161,19 @@ export interface CashflowSummary {
   readonly transactions: readonly CashflowTransaction[];
 }
 
+export interface AccountSummary {
+  readonly balance: number;
+  readonly profitToday: number;
+  readonly profitWeek: number;
+  readonly profitMonth: number;
+  
+  readonly grossTradeProfit: number;
+  readonly totalDeposits: number;
+  readonly totalWithdrawals: number;
+  readonly totalProfitSharing: number;
+  readonly netProfit: number;
+}
+
 // ---------------------------------------------
 // Grouped Deal (Round-Turn Position)
 // ---------------------------------------------

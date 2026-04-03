@@ -56,12 +56,11 @@ src/
 4.  `apiClient` sends data to the `Backend-Sub`.
 5.  `Backend-Sub` validates and stores the user.
 
-### 2. Dashboard Data Fetching
-1.  Page in `app/dashboard` renders.
-2.  `useDashboardData()` hook calls `AccountService.getAccountInfo()`.
-3.  `AccountService` calls `apiClient` via the Next.js Gateway Proxy.
-4.  The request includes an `X-Trace-ID` for distributed tracing.
-5.  Data is returned as a `ServiceResponse<T>` and processed by the UI.
+### 2. Account Data Fetching (Optimized)
+1.  Page in `app/account` renders.
+2.  `useAccountData()` hook calls `AccountService.getAccountSummary()`.
+3.  `AccountService` calls `apiClient` via the Next.js Gateway Proxy to the optimized `/api/v1/dashboard/account` endpoint.
+4.  Data is returned as a lightweight summary, reducing bandwidth and CPU usage.
 
 ## 📡 Observability Strategy
 

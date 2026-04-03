@@ -2,7 +2,7 @@ import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
 import { ENDPOINTS } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
-import type { AccountInfo, ServiceResponse } from '@/shared/types/api';
+import type { AccountInfo, AccountSummary, ServiceResponse } from '@/shared/types/api';
 
 const logger = createLogger('AccountService');
 
@@ -25,6 +25,26 @@ export const AccountService = {
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึงข้อมูลบัญชี';
       logger.error('Failed to fetch account info', e instanceof Error ? e : String(e));
+      
+      return {
+        success: false,
+        data: null,
+        error: { code: 'FETCH_ERROR', message: errorMsg },
+      };
+    }
+  },
+
+  /**
+   * ดึงข้อมูลสรุปสำหรับการเงิน (Lightweight Account Summary)
+   */
+  getAccountSummary: async (): Promise<ServiceResponse<AccountSummary>> => {
+    try {
+      logger.info('Fetching account summary');
+      const response = await apiClient<ServiceResponse<AccountSummary>>(ENDPOINTS.ACCOUNT_SUMMARY);
+      return response;
+    } catch (e: unknown) {
+      const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึงข้อมูลสรุปบัญชี';
+      logger.error('Failed to fetch account summary', e instanceof Error ? e : String(e));
       
       return {
         success: false,
