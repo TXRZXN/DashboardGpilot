@@ -18,10 +18,25 @@ export const TradeHistoryService = {
     try {
       logger.info('Fetching trade history', { params });
       
+      // Filter only supported params for /trades (Backend-Main)
+      const filteredParams: Record<string, any> = {};
+      
+      if (params) {
+        if (params.from_date) filteredParams.from_date = params.from_date;
+        if (params.to_date) filteredParams.to_date = params.to_date;
+        if (params.symbol) filteredParams.symbol = params.symbol;
+        if (params.type) filteredParams.type = params.type;
+        if (params.entry) filteredParams.entry = params.entry;
+        if (params.comment) filteredParams.comment = params.comment;
+      }
+
+      // Only pass if there's filtering criteria
+      const finalParams = Object.keys(filteredParams).length > 0 ? filteredParams : undefined;
+
       const response = await apiClient<ServiceResponse<any>>(
         ENDPOINTS.TRADES, 
         undefined, 
-        params as any
+        finalParams
       );
       
       let normalizedDeals: Deal[] = [];

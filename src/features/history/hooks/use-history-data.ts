@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnalyticsService } from "@/shared/services/analytics-service";
 import { TradeHistoryService } from "@/shared/services/trade-history-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
@@ -22,17 +22,19 @@ export interface HistoryTotals {
 
 /**
  * useHistoryData
- * ดึง Grouped Trades จาก Backend แล้วทำ client-side sort/filter
- *
- * Business Rule ที่อยู่ Backend: การ Group IN/OUT เป็น 1 Position
- * Business Rule ที่อยู่ Frontend: Sorting, Text Search (instant UX)
+ * ดึง Grouped Trades จาก Backend โดยใช้ Server-side Pagination, Sorting และ Filtering
  */
 export function useHistoryData() {
   const { isHealthy } = useApiHealth();
 
-  const [allTrades, setAllTrades] = useState<GroupedDeal[]>([]);
+  const [trades, setTrades] = useState<GroupedDeal[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination States (UI 0-indexed)
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // UI States — Sorting
   const [sortField, setSortField] = useState<SortField>("closeTime");
@@ -40,9 +42,30 @@ export function useHistoryData() {
 
   // UI States — Filtering
   const [symbolFilter, setSymbolFilter] = useState("");
+  const [debouncedSymbol, setDebouncedSymbol] = useState("");
   const [typeFilter, setTypeFilter] = useState<"ALL" | "BUY" | "SELL">("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const [apiTotals, setApiTotals] = useState<HistoryTotals>({
+    volume: 0,
+    grossProfit: 0,
+    grossLoss: 0,
+    netPL: 0,
+    commission: 0,
+    swap: 0,
+    fee: 0,
+    totalTrades: 0,
+  });
+
+  // Debounce Symbol Filter (500ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSymbol(symbolFilter);
+      setPage(0); // Reset page on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [symbolFilter]);
 
   const fetchGroupedTrades = useCallback(async () => {
     if (!isHealthy) return;
@@ -50,99 +73,59 @@ export function useHistoryData() {
       setLoading(true);
       setError(null);
 
-      const [groupResponse, historyResponse] = await Promise.all([
-        AnalyticsService.getGroupedTrades({ pageSize: 10000 }), // Get all for client-side sort/filter
-        TradeHistoryService.getHistory() // Background sync
-      ]);
+      // Map to Backend-Main API Aliases
+      const response = await AnalyticsService.getGroupedTrades({
+        page: page + 1, // API is 1-indexed
+        limit: rowsPerPage,
+        date_from: startDate || null,
+        end_date: endDate || null,
+        symbol: debouncedSymbol || null,
+        type: typeFilter === "ALL" ? null : typeFilter,
+        order_by: sortField,
+        order_dir: sortDirection.toUpperCase() as "ASC" | "DESC"
+      });
 
-      if (groupResponse.success && groupResponse.data) {
-        setAllTrades(groupResponse.data.paginated.list || []);
+      if (response.success && response.data) {
+        const { paginated, ...totals } = response.data;
+        setTrades(paginated.list || []);
+        setTotalCount(response.meta?.total ?? 0);
+        
+        setApiTotals({
+          volume: totals.totalVolume,
+          grossProfit: totals.grossProfit,
+          grossLoss: totals.grossLoss,
+          netPL: totals.netProfit,
+          commission: 0, // Backend aggregated deals already include costs in netProfit, or we map specifically if available
+          swap: 0,
+          fee: totals.fee,
+          totalTrades: totals.totalTrades,
+        });
+
+        // Trigger background sync for raw trades (optional)
+        TradeHistoryService.getHistory().catch(e => console.error("Sync error", e));
       } else {
-        setError(groupResponse.error?.message ?? "Failed to fetch trade history");
+        setError(response.error?.message ?? "Failed to fetch trade history");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
-  }, [isHealthy]);
+  }, [
+    isHealthy, 
+    page, 
+    rowsPerPage, 
+    debouncedSymbol, 
+    typeFilter, 
+    startDate, 
+    endDate, 
+    sortField, 
+    sortDirection
+  ]);
 
   useEffect(() => {
     fetchGroupedTrades();
   }, [fetchGroupedTrades]);
-
-  // Client-side filtering (instant UX) + sorting
-  const filteredDeals = useMemo(() => {
-    let result = allTrades.filter((deal) => {
-      const matchesSymbol = !symbolFilter || (deal.symbol?.toLowerCase() ?? "").includes(symbolFilter.toLowerCase());
-      const matchesType = typeFilter === "ALL" || deal.type === typeFilter;
-
-      let matchesDate = true;
-      if (startDate || endDate) {
-        const dealDate = deal.closeTime.split("T")[0];
-        if (startDate && dealDate < startDate) matchesDate = false;
-        if (endDate && dealDate > endDate) matchesDate = false;
-      }
-
-      return matchesSymbol && matchesType && matchesDate;
-    });
-
-    // Client-side sorting (UI State)
-    result = [...result].sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
-
-      switch (sortField) {
-        case "netProfit":
-          aVal = a.netProfit;
-          bVal = b.netProfit;
-          break;
-        case "closeTime":
-          aVal = a.closeTime;
-          bVal = b.closeTime;
-          break;
-        case "symbol":
-          aVal = a.symbol ?? "";
-          bVal = b.symbol ?? "";
-          break;
-        case "volume":
-          aVal = a.volume;
-          bVal = b.volume;
-          break;
-        case "type":
-          aVal = a.type;
-          bVal = b.type;
-          break;
-        default:
-          aVal = a.closeTime;
-          bVal = b.closeTime;
-      }
-
-      const modifier = sortDirection === "asc" ? 1 : -1;
-      if (typeof aVal === "string") {
-        return (aVal || "").localeCompare(bVal || "") * modifier;
-      }
-      return ((aVal as number || 0) - (bVal as number || 0)) * modifier;
-    });
-
-    return result;
-  }, [allTrades, symbolFilter, sortField, sortDirection, typeFilter, startDate, endDate]);
-
-  const totals = useMemo<HistoryTotals>(() => {
-    return filteredDeals.reduce(
-      (acc, deal) => ({
-        volume: acc.volume + deal.volume,
-        grossProfit: acc.grossProfit + Math.max(0, deal.netProfit),
-        grossLoss: acc.grossLoss + Math.min(0, deal.netProfit),
-        netPL: acc.netPL + deal.netProfit,
-        commission: acc.commission + (deal.commission || 0),
-        swap: acc.swap + (deal.swap || 0),
-        fee: acc.fee + (deal.fee || 0),
-        totalTrades: acc.totalTrades + 1,
-      }),
-      { volume: 0, grossProfit: 0, grossLoss: 0, netPL: 0, commission: 0, swap: 0, fee: 0, totalTrades: 0 },
-    );
-  }, [filteredDeals]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -151,13 +134,30 @@ export function useHistoryData() {
       setSortField(field);
       setSortDirection("desc");
     }
+    setPage(0); // Reset page on sort
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
   };
 
   return {
     loading,
     error,
-    deals: filteredDeals,
-    totals,
+    deals: trades,
+    totals: apiTotals,
+
+    // Pagination
+    page,
+    rowsPerPage,
+    totalCount,
+    handlePageChange,
+    handleRowsPerPageChange,
 
     // Sort
     sortField,
@@ -170,9 +170,6 @@ export function useHistoryData() {
     startDate, setStartDate,
     endDate, setEndDate,
 
-    // Stats
-    totalCount: allTrades.length,
-    filteredCount: filteredDeals.length,
     refreshData: fetchGroupedTrades,
   };
 }

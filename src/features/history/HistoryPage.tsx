@@ -10,7 +10,14 @@ export default function HistoryPage() {
     error,
     deals,
     totals,
-    
+
+    // Pagination
+    page,
+    rowsPerPage,
+    totalCount,
+    handlePageChange,
+    handleRowsPerPageChange,
+
     // Sort
     sortField,
     sortDirection,
@@ -21,8 +28,6 @@ export default function HistoryPage() {
     typeFilter, setTypeFilter,
     startDate, setStartDate,
     endDate, setEndDate,
-    
-    filteredCount,
   } = useHistoryData();
 
   return (
@@ -70,7 +75,12 @@ export default function HistoryPage() {
         endDate={endDate}
         onEndDateChange={setEndDate}
         
-        filteredCount={filteredCount}
+        // Pagination
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalCount={totalCount}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
       />
     </Box>
   );

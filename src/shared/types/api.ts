@@ -40,18 +40,23 @@ export interface HealthResponse {
 
 /**
  * Filter สำหรับการดึงข้อมูล Trades
+ * รองรับทั้ง Backend-Main (Standard & Grouped)
  */
 export interface TradeRequest {
-  from_date?: string | null;
-  to_date?: string | null;
+  from_date?: string | null;  // สำหรับ API ทั่วไป
+  to_date?: string | null;    // สำหรับ API ทั่วไป
+  date_from?: string | null;  // สำหรับ /trades/grouped (Backend Alias)
+  end_date?: string | null;   // สำหรับ /trades/grouped (Backend Alias)
   symbol?: string | null;
   type?: string | null;
   entry?: string | null;
   comment?: string | null;
   pageNumber?: number;
   pageSize?: number;
-  page?: number;     // Pagination
-  limit?: number;    // Pagination
+  page?: number;     // Pagination Alias
+  limit?: number;    // Pagination Alias
+  order_by?: string | null;   // Sorting
+  order_dir?: 'ASC' | 'DESC'; // Sorting
 }
 
 // ---------------------------------------------
@@ -111,8 +116,7 @@ export interface DashboardSummary {
   readonly profitMonth: number;
   readonly equityCurve: readonly EquityPoint[];
   readonly symbolStats: {
-    readonly totaltrades?: number; // Match actual backend JSON response
-    readonly totalTrades?: number; // Keep for fallback if backend changes
+    readonly totaltrades: number; // Match actual backend JSON response (lowercase)
     readonly list: readonly SymbolStat[];
   };
   readonly recent: readonly DashboardRecentTransaction[];

@@ -37,10 +37,22 @@ export const AnalyticsService = {
   getGroupedTrades: async (params?: TradeRequest): Promise<ServiceResponse<GroupedTradesResponse>> => {
     try {
       logger.info('Fetching grouped trades', { params });
+
+      // Map parameters to Backend-Main aliases (v3)
+      const mappedParams: Record<string, any> = { ...params };
+      
+      if (params?.from_date) mappedParams.date_from = params.from_date;
+      if (params?.to_date) mappedParams.end_date = params.to_date;
+      if (params?.pageNumber) mappedParams.page = params.pageNumber;
+      if (params?.pageSize) mappedParams.limit = params.pageSize;
+
+      // Only pass params if not empty to match expected apiClient behavior in tests
+      const finalParams = Object.keys(mappedParams).length > 0 ? mappedParams : undefined;
+
       return await apiClient<ServiceResponse<GroupedTradesResponse>>(
         ENDPOINTS.TRADES_GROUPED,
         undefined,
-        params as any,
+        finalParams,
       );
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง grouped trades';

@@ -5,17 +5,16 @@ import { AnalyticsService } from "@/shared/services/analytics-service";
 import { TradeHistoryService } from "@/shared/services/trade-history-service";
 import { HealthService } from "@/shared/services/health-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
-import type { DashboardSummary, Deal } from "@/shared/types/api";
+import type { DashboardSummary } from "@/shared/types/api";
 
 /**
  * useDashboardData
- * ดึง Dashboard Summary, Trades และ Health Check ขนานกันแบบ 3 เส้น
+ * ดึง Dashboard Summary และ Health Check ขนานกัน
+ * หมายเหตุ: getHistory() ถูกเรียกเพื่อกระตุ้น Background Sync ใน Backend เท่านั้น ไม่ได้นำข้อมูลมาแสดงผล
  */
 export function useDashboardData() {
   const { isHealthy } = useApiHealth();
-
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [deals, setDeals] = useState<readonly Deal[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,27 +23,28 @@ export function useDashboardData() {
     try {
       setLoading(true);
       setError(null);
-      
-      const [dashResponse, historyResponse, healthResponse] = await Promise.all([
+
+      const [dashResponse, healthResponse] = await Promise.all([
         AnalyticsService.getDashboardSummary(),
-        TradeHistoryService.getHistory(),
-        HealthService.checkHealth()
+        HealthService.checkHealth(),
+        // ยิงทิ้งเพื่อ updated db เฉยๆ (Background Sync)
+        TradeHistoryService.getHistory().catch(() => null),
       ]);
 
-      if (healthResponse.success && healthResponse.data?.status === 'ok') {
+      if (healthResponse.success && healthResponse.data?.status === "ok") {
         if (dashResponse.success && dashResponse.data) {
           setSummary(dashResponse.data);
         } else if (!dashResponse.success) {
-          setError(dashResponse.error?.message ?? "Failed to fetch dashboard summary");
-        }
-
-        if (historyResponse.success && historyResponse.data) {
-          setDeals(historyResponse.data);
+          setError(
+            dashResponse.error?.message ?? "Failed to fetch dashboard summary",
+          );
         }
       } else {
-        setError(healthResponse.error || "System health check failed. Cannot load dashboard data.");
+        setError(
+          healthResponse.error ||
+            "System health check failed. Cannot load dashboard data.",
+        );
         setSummary(null);
-        setDeals([]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
@@ -61,10 +61,13 @@ export function useDashboardData() {
   const equityData = useMemo(() => {
     if (!summary) return [];
     return summary.equityCurve.map((point) => ({
-      date: new Date(point.time).toLocaleDateString("en-US", { day: "2-digit", month: "short" }),
+      date: new Date(point.time).toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "short",
+      }),
       time: point.time,
       equity: point.equity,
-      balance: point.equity, 
+      balance: point.equity,
     }));
   }, [summary]);
 
@@ -74,13 +77,6 @@ export function useDashboardData() {
       currency: "USD",
     }).format(value);
 
-  // คำนวณ Volume และ Trade Count จาก Backend BG Sync
-  const tradesVolume = useMemo(() => {
-    return deals.filter(d => ['BUY', 'SELL'].includes(d.type)).reduce((acc, d) => acc + d.volume, 0);
-  }, [deals]);
-
-
-
   return {
     loading,
     error,
@@ -89,9 +85,7 @@ export function useDashboardData() {
     symbolStats: summary?.symbolStats?.list ?? [],
     recent: summary?.recent ?? [],
     volumeStats: {
-      currentVolume: tradesVolume,
-      targetVolume: Math.max(10, Math.round((summary?.balance ?? 10000) / 100)),
-      tradeCount: summary?.symbolStats?.totaltrades ?? summary?.symbolStats?.totalTrades ?? 0,
+      tradeCount: summary?.symbolStats?.totaltrades ?? 0,
     },
     profitToday: summary?.profitToday ?? 0,
     profitWeek: summary?.profitWeek ?? 0,

@@ -6,7 +6,6 @@ import {
   Box, 
   Typography, 
   TextField, 
-  InputAdornment, 
   IconButton, 
   Chip, 
   Paper, 
@@ -25,17 +24,15 @@ import {
   InputLabel,
   Collapse,
   Button,
-  Stack,
   TablePagination
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTheme } from "@mui/material/styles";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import type { GroupedDeal } from "@/shared/types/api";
 import type { SortField, SortDirection, HistoryTotals } from "@/features/history/hooks/use-history-data";
 
@@ -57,7 +54,12 @@ interface DataTableProps {
   readonly endDate: string;
   readonly onEndDateChange: (value: string) => void;
 
-  readonly filteredCount: number;
+  // External Pagination
+  readonly totalCount: number;
+  readonly page: number;
+  readonly rowsPerPage: number;
+  readonly onPageChange: (newPage: number) => void;
+  readonly onRowsPerPageChange: (newRowsPerPage: number) => void;
 }
 
 export function DataTable({
@@ -78,30 +80,24 @@ export function DataTable({
   endDate,
   onEndDateChange,
 
-  filteredCount,
+  // External Pagination
+  totalCount,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
 }: Readonly<DataTableProps>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Reset page to 0 when data or filter changes to avoid "empty page" issues
-  useEffect(() => {
-    setPage(0);
-  }, [deals.length, symbolFilter, typeFilter, startDate, endDate, sortField, sortDirection]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
+    onPageChange(newPage);
   };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const val = Number.parseInt(event.target.value, 10);
-    setRowsPerPage(val);
-    setPage(0);
+    onRowsPerPageChange(Number.parseInt(event.target.value, 10));
   };
-
-  const paginatedDeals = deals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const handleResetFilters = () => {
     onSymbolFilterChange("");
@@ -111,7 +107,7 @@ export function DataTable({
   };
 
   const pageTotals = useMemo(() => {
-    return paginatedDeals.reduce((acc, d) => ({
+    return deals.reduce((acc, d) => ({
       totalTrades: acc.totalTrades + 1,
       volume: acc.volume + d.volume,
       grossProfit: acc.grossProfit + (d.netProfit > 0 ? d.netProfit : 0),
@@ -119,7 +115,7 @@ export function DataTable({
       netPL: acc.netPL + d.netProfit,
       fees: acc.fees + (d.commission + d.swap + d.fee)
     }), { totalTrades: 0, volume: 0, grossProfit: 0, grossLoss: 0, netPL: 0, fees: 0 });
-  }, [paginatedDeals]);
+  }, [deals]);
 
   return (
     <Card>
@@ -153,7 +149,7 @@ export function DataTable({
               Trade History
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              {filteredCount} trades found
+              {totalCount} trades found
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -308,7 +304,7 @@ export function DataTable({
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedDeals.map((deal) => {
+              {deals.map((deal) => {
                 const renderDealTypeChip = () => {
                   let icon = <SwapHorizIcon sx={{ fontSize: 14, color: "text.secondary" }} />;
                   let bgcolor = "rgba(148, 163, 184, 0.2)";
@@ -385,7 +381,7 @@ export function DataTable({
                 );
               })}
               
-              {paginatedDeals.length === 0 && (
+              {deals.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                     <Typography variant="body2" color="text.secondary">
@@ -412,7 +408,7 @@ export function DataTable({
 
         {/* Mobile Card View */}
         <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
-          {paginatedDeals.map((deal) => {
+          {deals.map((deal) => {
             const isPositive = deal.netProfit > 0;
             const isNegative = deal.netProfit < 0;
             
@@ -497,7 +493,7 @@ export function DataTable({
           <TablePagination
             rowsPerPageOptions={[10, 25, 50]}
             component="div"
-            count={deals.length}
+            count={totalCount}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -556,7 +552,7 @@ export function DataTable({
               { label: 'Net P/L', value: `${pageTotals.netPL >= 0 ? '+' : ''}$${pageTotals.netPL.toFixed(2)}`, color: pageTotals.netPL >= 0 ? 'success.main' : 'error.main', bold: true },
               { label: 'Fees', value: `$${pageTotals.fees.toFixed(2)}`, color: 'text.secondary' },
             ].map((m, idx) => (
-              <Box key={idx} sx={{ 
+              <Box key={m.label} sx={{ 
                 display: 'flex', 
                 justifyContent: { xs: 'space-between', md: 'flex-end' }, 
                 alignItems: 'center',
@@ -592,7 +588,7 @@ export function DataTable({
               { label: 'Net P/L', value: `${totals.netPL >= 0 ? '+' : ''}$${totals.netPL.toFixed(2)}`, color: totals.netPL >= 0 ? 'success.main' : 'error.main', bold: true },
               { label: 'Fees', value: `$${(totals.commission + totals.swap + (totals as any).fee || 0).toFixed(2)}`, color: 'text.secondary' },
             ].map((m, idx) => (
-              <Box key={idx} sx={{ 
+              <Box key={m.label} sx={{ 
                 display: 'flex', 
                 justifyContent: { xs: 'space-between', md: 'flex-end' }, 
                 alignItems: 'center',

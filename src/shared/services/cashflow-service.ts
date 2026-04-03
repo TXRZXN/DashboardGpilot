@@ -16,11 +16,18 @@ export const CashflowService = {
    */
   getCashflowSummary: async (params?: TradeRequest): Promise<ServiceResponse<CashflowSummary>> => {
     try {
-      logger.info('Fetching cashflow summary', { params });
+      // Map parameters to Backend-Main aliases (Pagination)
+      const mappedParams: Record<string, any> = { ...params };
+      if (params?.pageNumber) mappedParams.page = params.pageNumber;
+      if (params?.pageSize) mappedParams.limit = params.pageSize;
+
+      // Only pass if there's filtering / pagination
+      const finalParams = Object.keys(mappedParams).length > 0 ? mappedParams : undefined;
+
       return await apiClient<ServiceResponse<CashflowSummary>>(
         ENDPOINTS.CASHFLOW_SUMMARY,
         undefined,
-        params as any,
+        finalParams,
       );
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง cashflow summary';
