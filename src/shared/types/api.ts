@@ -114,6 +114,18 @@ export interface DashboardSummary {
   readonly profitToday: number;
   readonly profitWeek: number;
   readonly profitMonth: number;
+
+  // Performance Metrics (Integrated from Analytics)
+  readonly winRate: number;
+  readonly riskRewardRatio: number;
+  readonly avgWin: number;
+  readonly avgLoss: number;
+  readonly profitFactor: number;
+  readonly sharpeRatio: number;
+  readonly maxDrawdownPct: number;
+  readonly maxDrawdownAmount: number;
+  readonly recoveryFactor: number;
+
   readonly equityCurve: readonly EquityPoint[];
   readonly symbolStats: {
     readonly totaltrades: number; // Match actual backend JSON response (lowercase)
@@ -121,6 +133,7 @@ export interface DashboardSummary {
   };
   readonly recent: readonly DashboardRecentTransaction[];
 }
+
 
 // ---------------------------------------------
 // Cashflow Types

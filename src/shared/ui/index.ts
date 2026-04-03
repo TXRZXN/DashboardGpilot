@@ -9,3 +9,5 @@ export * from "./volume-progress";
 export * from "./balance-chart";
 export * from "./margin-gauge";
 export * from "./data-table";
+export * from "./risk-metrics";
+export * from "./pl-distribution";

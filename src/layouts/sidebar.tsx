@@ -10,7 +10,6 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: Dashboard },
   { label: "Cashflow", href: "/cashflow", icon: AccountBalanceWallet },
   { label: "History", href: "/history", icon: History },
-  { label: "Analytics", href: "/analytics", icon: Analytics },
   { label: "My account", href: "/account", icon: Person },
 ];
 
@@ -62,7 +61,7 @@ export function Sidebar() {
                 justifyContent: "center",
               }}
             >
-              <Analytics sx={{ color: "primary.main", fontSize: 20 }} />
+              <Dashboard sx={{ color: "primary.main", fontSize: 20 }} />
             </Box>
             <Box>
               <Typography

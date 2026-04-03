@@ -9,16 +9,6 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { SvgIconComponent } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 
-interface MetricData {
-  label: string;
-  value: string;
-  description: string;
-  icon: SvgIconComponent;
-  colorKey: "success" | "primary" | "error";
-  bgColor: string;
-  formula: string;
-}
-
 interface MetricItemProps {
   label: string;
   value: string | number;
@@ -28,65 +18,99 @@ interface MetricItemProps {
 
 function MetricItem({ label, value, color = "text.primary", tooltip, icon: Icon }: MetricItemProps & { icon: SvgIconComponent }) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
+  const isDark = theme.palette.mode === "dark";
 
   return (
-    <Card 
-      variant="outlined" 
-      sx={{ 
-        height: '100%',
-        bgcolor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)',
-        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-        borderRadius: 2,
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          borderColor: 'primary.main',
-          bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
-          transform: 'translateY(-2px)',
-          boxShadow: isDark ? '0 8px 24px -12px rgba(0,0,0,0.5)' : '0 8px 24px -12px rgba(0,0,0,0.1)'
-        }
+    <Card
+      sx={{
+        height: 115,
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(12px)",
+        border: `1px solid ${
+          isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)"
+        }`,
+        borderRadius: 3,
+        boxShadow: isDark
+          ? "0 4px 20px -10px rgba(0,0,0,0.5)"
+          : "0 4px 20px -10px rgba(0,0,0,0.1)",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
+      <CardContent
+        sx={{
+          p: { xs: 2, lg: 2.5 },
+          flex: 1,
+          "&:last-child": { pb: { xs: 2, lg: 2.5 } },
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+          }}
+        >
+          <Box sx={{ flex: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  fontSize: { xs: "0.7rem", lg: "0.8rem" },
+                  fontWeight: 500,
+                }}
+              >
+                {label}
+              </Typography>
+              {tooltip && (
+                <Tooltip title={tooltip} arrow>
+                  <IconButton
+                    size="small"
+                    aria-label="More information"
+                    sx={{ p: 0, color: "text.disabled" }}
+                  >
+                    <InfoOutlinedIcon sx={{ fontSize: 13 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                color: color,
+                fontFamily: "var(--font-inter)",
+                fontWeight: 700,
+                fontSize: { xs: "1.1rem", lg: "1.35rem" },
+                letterSpacing: "-0.02em",
+                lineHeight: 1.2,
+              }}
+            >
+              {value}
+            </Typography>
+          </Box>
           <Box
             sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : `${color}15`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: "8px",
-              bgcolor: `${color}15`,
-              color: color,
+              flexShrink: 0,
             }}
           >
-            <Icon sx={{ fontSize: 18 }} />
+            <Icon sx={{ color: color, fontSize: 20 }} />
           </Box>
-          {tooltip && (
-            <Tooltip title={tooltip} arrow>
-              <IconButton 
-                size="small" 
-                aria-label="More information"
-                sx={{ p: 0, color: "text.disabled", mt: -0.5, mr: -0.5 }}
-              >
-                <InfoOutlinedIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Tooltip>
-          )}
         </Box>
-        
-        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, display: 'block', mb: 0.5 }}>
-          {label}
-        </Typography>
-        
-        <Typography variant="h5" sx={{ color: color, fontWeight: 800, letterSpacing: '-0.02em' }}>
-          {value}
-        </Typography>
       </CardContent>
     </Card>
   );
 }
+
 
 interface RiskMetricsProps {
   readonly winRate?: number;
@@ -107,19 +131,14 @@ export function RiskMetrics({
   recoveryFactor = 0, 
   maxDrawdown = 0, 
   profitFactor = 0,
-  grossProfit = 0,
-  grossLoss = 0,
-  avgWin = 0,
-  avgLoss = 0,
-  totalTrades = 0, 
-  wins = 0,
   loading 
 }: Readonly<RiskMetricsProps>) {
   const theme = useTheme();
 
   return (
-    <Grid container spacing={{ xs: 2, lg: 3 }}>
-      <Grid size={{ xs: 6 }}>
+    <Grid container spacing={{ xs: 2, lg: 2 }}>
+       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+   
         <MetricItem 
           label="Win Rate" 
           value={`${winRate.toFixed(1)}%`} 
@@ -128,7 +147,8 @@ export function RiskMetrics({
           tooltip="อัตราการชนะ คำนวณจากเปอร์เซ็นต์ของไม้ที่ปิดแล้วมีกำไรสุทธิเทียบกับจำนวนออเดอร์ทั้งหมด"
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+     
         <MetricItem 
           label="Recovery Factor" 
           value={`${recoveryFactor.toFixed(2)}x`}
@@ -137,7 +157,8 @@ export function RiskMetrics({
           tooltip="Recovery Factor วัดความสามารถในการทำกำไรคืนเมื่อเทียบกับจุดที่ขาดทุนสะสมสูงสุด (กำไรสุทธิ / Max DD Amount) เป็นการวัดความอึดของพอร์ต"
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+     
         <MetricItem 
           label="Max DD" 
           value={`${maxDrawdown.toFixed(1)}%`} 
@@ -146,7 +167,8 @@ export function RiskMetrics({
           tooltip="Maximum Drawdown คือจุดที่พอร์ตตกลงมามากที่สุดจากจุดสูงสุด (Peak) วัดเป็นเปอร์เซ็นต์ของยอดเงินรวม"
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+     
         <MetricItem 
           label="Profit Factor" 
           value={profitFactor.toFixed(2)} 

@@ -24,9 +24,11 @@ src/
 ├── app/                        # Next.js App Router (Routing & Pages)
 ├── features/                   # Feature Modules (Feature UI + Hooks)
 │   ├── account/                # Components specific to account
-│   └── ...
+│   ├── dashboard/              # Home Overview & Analytics [REFACTORED]
+│   ├── history/                # Trade Logs
+│   └── cashflow/               # Fund Movements
 ├── shared/                     # Shared cross-feature code
-│   ├── ui/                     # Presentation Layer: Reusable UI (DataTable, Charts) [NEW]
+│   ├── ui/                     # Presentation Layer: Reusable UI (DataTable, Charts, RiskMetrics) [UPDATED]
 │   ├── api/                    # Infrastructure: API client & Endpoints
 │   ├── services/               # Application Layer: Business Flow Orchestration
 │   ├── types/                  # Domain Models & Type Definitions

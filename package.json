@@ -7,7 +7,7 @@
     "clean": "node -e \"const fs = require('fs'); if (fs.existsSync('.next')) fs.rmSync('.next', { recursive: true, force: true })\"",
     "build": "npm run clean && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint src",
     "check": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",

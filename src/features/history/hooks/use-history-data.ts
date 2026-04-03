@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AnalyticsService } from "@/shared/services/analytics-service";
 import { TradeHistoryService } from "@/shared/services/trade-history-service";
+import { HealthService } from "@/shared/services/health-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
 import type { GroupedDeal } from "@/shared/types/api";
 
@@ -73,38 +74,44 @@ export function useHistoryData() {
       setLoading(true);
       setError(null);
 
-      // Map to Backend-Main API Aliases
-      const response = await AnalyticsService.getGroupedTrades({
-        page: page + 1, // API is 1-indexed
-        limit: rowsPerPage,
-        date_from: startDate || null,
-        end_date: endDate || null,
-        symbol: debouncedSymbol || null,
-        type: typeFilter === "ALL" ? null : typeFilter,
-        order_by: sortField,
-        order_dir: sortDirection.toUpperCase() as "ASC" | "DESC"
-      });
+      // Parallel Fetch 3: Grouped Trades + Sync + Health
+      const [response, syncResponse, healthResponse] = await Promise.all([
+        AnalyticsService.getGroupedTrades({
+          page: page + 1, // API is 1-indexed
+          limit: rowsPerPage,
+          date_from: startDate || null,
+          end_date: endDate || null,
+          symbol: debouncedSymbol || null,
+          type: typeFilter === "ALL" ? null : typeFilter,
+          order_by: sortField,
+          order_dir: sortDirection.toUpperCase() as "ASC" | "DESC"
+        }),
+        TradeHistoryService.getHistory(),
+        HealthService.checkHealth()
+      ]);
 
-      if (response.success && response.data) {
-        const { paginated, ...totals } = response.data;
-        setTrades(paginated.list || []);
-        setTotalCount(response.meta?.total ?? 0);
-        
-        setApiTotals({
-          volume: totals.totalVolume,
-          grossProfit: totals.grossProfit,
-          grossLoss: totals.grossLoss,
-          netPL: totals.netProfit,
-          commission: 0, // Backend aggregated deals already include costs in netProfit, or we map specifically if available
-          swap: 0,
-          fee: totals.fee,
-          totalTrades: totals.totalTrades,
-        });
-
-        // Trigger background sync for raw trades (optional)
-        TradeHistoryService.getHistory().catch(e => console.error("Sync error", e));
+      if (healthResponse.success && healthResponse.data?.status === "ok") {
+        if (response.success && response.data) {
+          const { paginated, ...totals } = response.data;
+          setTrades(paginated.list || []);
+          setTotalCount(response.meta?.total ?? 0);
+          
+          setApiTotals({
+            volume: totals.totalVolume,
+            grossProfit: totals.grossProfit,
+            grossLoss: totals.grossLoss,
+            netPL: totals.netProfit,
+            commission: 0,
+            swap: 0,
+            fee: totals.fee,
+            totalTrades: totals.totalTrades,
+          });
+        } else {
+          setError(response.error?.message ?? "Failed to fetch trade history");
+        }
       } else {
-        setError(response.error?.message ?? "Failed to fetch trade history");
+        setError(healthResponse.error || "System health check failed. Cannot load history data.");
+        setTrades([]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");

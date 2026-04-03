@@ -32,8 +32,39 @@ export function MetricCard({
   };
 
   return (
-    <Card sx={{ height: 115, display: 'flex', flexDirection: 'column' }}>
-      <CardContent sx={{ p: { xs: 2, lg: 2.5 }, flex: 1, "&:last-child": { pb: { xs: 2, lg: 2.5 } } }}>
+    <Card
+      sx={{
+        height: 115,
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: (theme) =>
+          theme.palette.mode === "dark"
+            ? "rgba(255, 255, 255, 0.03)"
+            : "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(12px)",
+        border: (theme) =>
+          `1px solid ${
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.08)"
+              : "rgba(0, 0, 0, 0.05)"
+          }`,
+        borderRadius: 3,
+        boxShadow: (theme) =>
+          theme.palette.mode === "dark"
+            ? "0 4px 20px -10px rgba(0,0,0,0.5)"
+            : "0 4px 20px -10px rgba(0,0,0,0.1)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <CardContent
+        sx={{
+          p: { xs: 2, lg: 2.5 },
+          flex: 1,
+          "&:last-child": { pb: { xs: 2, lg: 2.5 } },
+        }}
+      >
+
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <Box sx={{ flex: 1 }}>
             <Typography

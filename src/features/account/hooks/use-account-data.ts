@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTradeData } from "@/shared/providers/trade-data-provider";
 import { CashflowService } from "@/shared/services/cashflow-service";
 import { AnalyticsService } from "@/shared/services/analytics-service";
+import { HealthService } from "@/shared/services/health-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
 import { mapAccountData } from "../utils/account-calculations";
 import type { CashflowSummary, DashboardSummary } from "@/shared/types/api";
@@ -21,21 +22,28 @@ export function useAccountData() {
       setLoading(true);
       setError(null);
 
-      const [cashRes, dashRes] = await Promise.all([
+      const [cashRes, dashRes, healthRes] = await Promise.all([
         CashflowService.getCashflowSummary(),
         AnalyticsService.getDashboardSummary(),
+        HealthService.checkHealth(),
       ]);
 
-      if (cashRes.success && cashRes.data) {
-        setCashflow(cashRes.data);
-      } else if (cashRes.error) {
-        setError(cashRes.error.message);
-      }
+      if (healthRes.success && healthRes.data?.status === "ok") {
+        if (cashRes.success && cashRes.data) {
+          setCashflow(cashRes.data);
+        } else if (cashRes.error) {
+          setError(cashRes.error.message);
+        }
 
-      if (dashRes.success && dashRes.data) {
-        setDashboard(dashRes.data);
-      } else if (dashRes.error) {
-        setError(dashRes.error.message);
+        if (dashRes.success && dashRes.data) {
+          setDashboard(dashRes.data);
+        } else if (dashRes.error) {
+          setError(dashRes.error.message);
+        }
+      } else {
+        setError(healthRes.error || "System health check failed. Cannot load account data.");
+        setCashflow(null);
+        setDashboard(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");

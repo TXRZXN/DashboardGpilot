@@ -2,7 +2,7 @@ import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
 import { ENDPOINTS } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
-import type { ServiceResponse, PerformanceStats, DashboardSummary, TradeRequest, GroupedTradesResponse } from '@/shared/types/api';
+import type { ServiceResponse, DashboardSummary, TradeRequest, GroupedTradesResponse } from '@/shared/types/api';
 
 const logger = createLogger('AnalyticsService');
 
@@ -14,26 +14,9 @@ const logger = createLogger('AnalyticsService');
  */
 export const AnalyticsService = {
   /**
-   * ดึง Performance Statistics ทั้งหมดจาก Backend
-   */
-  getPerformance: async (params?: TradeRequest): Promise<ServiceResponse<PerformanceStats>> => {
-    try {
-      logger.info('Fetching performance stats', { params });
-      return await apiClient<ServiceResponse<PerformanceStats>>(
-        ENDPOINTS.ANALYTICS_PERFORMANCE,
-        undefined,
-        params as any,
-      );
-    } catch (e: unknown) {
-      const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง performance stats';
-      logger.error('Failed to fetch performance stats', e instanceof Error ? e : String(e));
-      return { success: false, data: null, error: { code: 'FETCH_ERROR', message: errorMsg } };
-    }
-  },
-
-  /**
    * ดึง Trade History ที่ grouped by position (round-turn)
    */
+
   getGroupedTrades: async (params?: TradeRequest): Promise<ServiceResponse<GroupedTradesResponse>> => {
     try {
       logger.info('Fetching grouped trades', { params });

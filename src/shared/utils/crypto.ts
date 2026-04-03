@@ -46,7 +46,6 @@ export class CryptoUtils {
       // 5. Convert to Base64
       return btoa(String.fromCharCode(...combined));
     } catch (error) {
-      console.error('Encryption failed:', error);
       throw new Error('Failed to encrypt data');
     }
   }

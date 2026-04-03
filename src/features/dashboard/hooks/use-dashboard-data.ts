@@ -87,6 +87,14 @@ export function useDashboardData() {
     volumeStats: {
       tradeCount: summary?.symbolStats?.totaltrades ?? 0,
     },
+    // Performance Metrics from summary
+    performance: {
+      winRate: summary?.winRate ?? 0,
+      recoveryFactor: summary?.recoveryFactor ?? 0,
+      maxDrawdown: summary?.maxDrawdownPct ?? 0,
+      profitFactor: summary?.profitFactor ?? 0,
+      sharpeRatio: summary?.sharpeRatio ?? 0,
+    },
     profitToday: summary?.profitToday ?? 0,
     profitWeek: summary?.profitWeek ?? 0,
     profitMonth: summary?.profitMonth ?? 0,
@@ -94,3 +102,5 @@ export function useDashboardData() {
     refreshData: fetchSummary,
   };
 }
+
+

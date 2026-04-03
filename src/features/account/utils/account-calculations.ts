@@ -25,17 +25,14 @@ export function mapAccountData(
   dash: DashboardSummary | null
 ): AccountFinancialStats {
   return {
-    balance: cashflow?.currentBalance ?? 0,
-    deposits: cashflow?.transactions
-      ?.filter(t => t.type === 'Deposit')
-      ?.reduce((sum, t) => sum + t.amount, 0) ?? 0,
-    withdrawals: cashflow?.withdrawals ?? 0,
-    netProfit: cashflow?.netFlow ?? 0,
+    balance: dash?.balance ?? 0,
+    deposits: cashflow?.totalDeposit ?? 0,
+    withdrawals: cashflow?.totalWithdrawal ?? 0,
+    netProfit: (dash?.balance ?? 0) - (cashflow?.totalDeposit ?? 0) + (cashflow?.totalWithdrawal ?? 0),
     profitToday: dash?.profitToday ?? 0,
     profitWeek: dash?.profitWeek ?? 0,
     profitMonth: dash?.profitMonth ?? 0,
-    profitSharing: cashflow?.transactions
-      ?.filter(t => t.type === 'ProfitSharing')
-      ?.reduce((sum, t) => sum + Math.abs(t.amount), 0) ?? 0,
+    profitSharing: cashflow?.todayProfitSharing ?? 0,
   };
 }
+

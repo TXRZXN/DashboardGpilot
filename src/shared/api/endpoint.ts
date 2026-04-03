@@ -16,10 +16,9 @@ export const MAIN_ENDPOINTS = {
   TRADES_GROUPED: `${API_GATEWAY_MAIN}/api/v1/trades/grouped`,
   /** ดึงข้อมูลบัญชี MT5 */
   ACCOUNT: `${API_GATEWAY_MAIN}/api/v1/account`,
-  /** ดึง Performance Stats ทั้งหมด (Analytics page) */
-  ANALYTICS_PERFORMANCE: `${API_GATEWAY_MAIN}/api/v1/analytics/performance`,
   /** ดึง Dashboard Summary (today/week/month profit, symbol stats) */
   DASHBOARD_SUMMARY: `${API_GATEWAY_MAIN}/api/v1/dashboard/summary`,
+
   /** ดึง Cashflow Summary (transactions, balance chart) */
   CASHFLOW_SUMMARY: `${API_GATEWAY_MAIN}/api/v1/cashflow/summary`,
 } as const;

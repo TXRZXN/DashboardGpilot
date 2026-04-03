@@ -60,6 +60,11 @@ const defaultProps = {
   endDate: '',
   onEndDateChange: vi.fn(),
   filteredCount: 2,
+  totalCount: 2,
+  page: 0,
+  rowsPerPage: 10,
+  onPageChange: vi.fn(),
+  onRowsPerPageChange: vi.fn(),
 };
 
 describe('DataTable', () => {

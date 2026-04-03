@@ -398,7 +398,7 @@ export function DataTable({
         <TablePagination
           rowsPerPageOptions={[10, 25, 50]}
           component="div"
-          count={deals.length}
+          count={totalCount}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

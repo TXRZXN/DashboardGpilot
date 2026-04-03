@@ -42,7 +42,6 @@ src/
 │   └── (Gpilot)/               # Route Group: requires sidebar layout
 │       ├── dashboard/          # Home Overview
 │       ├── account/            # My Account & Financials [NEW]
-│       ├── analytics/          # Advanced Performance
 │       └── history/            # Trade Logs
 │
 ├── features/                   # Feature Modules (UI + Application Layer)
@@ -50,9 +49,8 @@ src/
 │   ├── account/                # Account & Financial Metrics [REFACTORED]
 │   │   └── components/         # Feature-specific UI components
 │   ├── dashboard/              # Dashboard feature
-│   ├── analytics/
-│   ├── history/
-│   └── cashflow/
+│   ├── history/                # Trade History feature
+│   └── cashflow/               # Cashflow feature
 │
 ├── shared/                     # Shared cross-feature code
 │   ├── ui/                     # Reusable UI Components (DataTable, Gauge, Charts) [NEW]

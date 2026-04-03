@@ -14,7 +14,6 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: <DashboardIcon /> },
   { label: "Cashflow", href: "/cashflow", icon: <AccountBalanceWalletIcon /> },
   { label: "History", href: "/history", icon: <HistoryIcon /> },
-  { label: "Analytics", href: "/analytics", icon: <AnalyticsIcon /> },
   { label: "Account", href: "/account", icon: <PersonIcon /> },
 ];
 
