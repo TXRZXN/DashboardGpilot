@@ -95,14 +95,21 @@ export function PasswordManagementCard() {
                 value={webPassword}
                 onChange={(e) => setWebPassword(e.target.value)}
                 autoComplete="new-password"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowWebPass(!showWebPass)} edge="end" size="small">
-                        {showWebPass ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowWebPass(!showWebPass)} edge="end" size="small">
+                          {showWebPass ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                    sx: {
+                      "& input::-ms-reveal, & input::-ms-clear": {
+                        display: "none",
+                      },
+                    },
+                  },
                 }}
               />
               <Button 
@@ -136,14 +143,21 @@ export function PasswordManagementCard() {
                 value={mt5Password}
                 onChange={(e) => setMt5Password(e.target.value)}
                 autoComplete="off"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowMt5Pass(!showMt5Pass)} edge="end" size="small">
-                        {showMt5Pass ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowMt5Pass(!showMt5Pass)} edge="end" size="small">
+                          {showMt5Pass ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                    sx: {
+                      "& input::-ms-reveal, & input::-ms-clear": {
+                        display: "none",
+                      },
+                    },
+                  },
                 }}
               />
               <Button 

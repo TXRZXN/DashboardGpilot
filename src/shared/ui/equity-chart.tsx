@@ -11,14 +11,13 @@ interface EquityChartProps {
   readonly title?: string;
 }
 
-export function EquityChart({ data: propData, loading, title = "Equity Curve" }: Readonly<EquityChartProps>) {
-  const [period, setPeriod] = useState("ALL");
+export function EquityChart({ data: propData, loading, title = "Account Growth" }: Readonly<EquityChartProps>) {
+  const [period, setPeriod] = useState("1Y");
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
   const chartData = useMemo(() => {
     if (!propData || propData.length === 0) return [];
-    if (period === "ALL") return propData;
 
     const now = new Date();
     const startDate = new Date();
@@ -26,6 +25,7 @@ export function EquityChart({ data: propData, loading, title = "Equity Curve" }:
     if (period === "1W") startDate.setDate(now.getDate() - 7);
     else if (period === "1M") startDate.setMonth(now.getMonth() - 1);
     else if (period === "3M") startDate.setMonth(now.getMonth() - 3);
+    else if (period === "1Y") startDate.setFullYear(now.getFullYear() - 1);
 
     return propData.filter((d) => {
       // ใช้ time (ISO) ในการเปรียบเทียบแทน date (Formatted)
@@ -33,6 +33,19 @@ export function EquityChart({ data: propData, loading, title = "Equity Curve" }:
       return dealDate.getTime() >= startDate.getTime();
     });
   }, [propData, period]);
+
+  const growthPct = useMemo(() => {
+    if (chartData.length < 2) return 0;
+    
+    // Find first non-zero balance to use as base (avoid division by zero and handle accounts starting from zero)
+    const firstNonZero = chartData.find((d) => d.balance > 0);
+    if (!firstNonZero) return 0;
+
+    const start = firstNonZero.balance;
+    const end = chartData[chartData.length - 1].balance;
+    
+    return ((end - start) / start) * 100;
+  }, [chartData]);
 
   const handlePeriodChange = (_: React.MouseEvent<HTMLElement>, newPeriod: string | null) => {
     if (newPeriod !== null) {
@@ -52,7 +65,7 @@ export function EquityChart({ data: propData, loading, title = "Equity Curve" }:
     if (chartData.length === 0) {
       return (
         <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>No data available</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>No data available for this period</Typography>
         </Box>
       );
     }
@@ -167,7 +180,7 @@ export function EquityChart({ data: propData, loading, title = "Equity Curve" }:
             <ToggleButton value="1W">1W</ToggleButton>
             <ToggleButton value="1M">1M</ToggleButton>
             <ToggleButton value="3M">3M</ToggleButton>
-            <ToggleButton value="ALL">ALL</ToggleButton>
+            <ToggleButton value="1Y">1Y</ToggleButton>
           </ToggleButtonGroup>
           
           <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 2 }}>
@@ -178,11 +191,26 @@ export function EquityChart({ data: propData, loading, title = "Equity Curve" }:
                   height: 8,
                   borderRadius: "50%",
                   bgcolor: "success.main",
+                  mt: -1.5,
                 }}
               />
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: '0.65rem' }}>
-                Balance
-              </Typography>
+              <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: '0.65rem', fontWeight: 600 }}>
+                  Balance
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: growthPct >= 0 ? "success.main" : "error.main", 
+                    fontSize: '0.65rem', 
+                    fontWeight: 700,
+                    display: 'block',
+                    mt: -0.5
+                  }}
+                >
+                  {growthPct >= 0 ? "+" : ""}{growthPct.toFixed(2)}%
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Box>

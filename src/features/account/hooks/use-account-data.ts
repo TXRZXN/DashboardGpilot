@@ -52,16 +52,34 @@ export function useAccountData() {
     }).format(value);
   };
 
-  const referralUrl = `https://gpilot.com/register?ref=${account?.login || "mock_ref_1234"}`;
+  // Simple Obfuscation: Encode ID with prefix to prevent plain text modification
+  const encodeReferral = (id: string | number) => {
+    try {
+      // Add GP- prefix before encoding to Base64 and strip padding for cleaner URL
+      return btoa(`GP-${id}`).replace(/=/g, "");
+    } catch {
+      return id.toString();
+    }
+  };
+
+  const [baseUrl, setBaseUrl] = useState("https://gpilotsystem.com");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
+
+  const referralUrl = `${baseUrl}/register?ref=${
+    summary?.login ? encodeReferral(summary.login) : "mock_ref_1234"
+  }`;
 
   return {
     loading: loading || globalLoading,
     error: error ?? globalError,
     account,
+    summary, // Provide full summary if needed
     realBalance: summary?.balance ?? 0,
-    profitToday: summary?.profitToday ?? 0,
-    profitWeek: summary?.profitWeek ?? 0,
-    profitMonth: summary?.profitMonth ?? 0,
     grossTradeProfit: summary?.grossTradeProfit ?? 0,
     totalDeposits: summary?.totalDeposits ?? 0,
     totalWithdrawals: summary?.totalWithdrawals ?? 0,

@@ -5,7 +5,7 @@
 ---
 
 | Category | Technology |
-|------|-----------|
+| :--- | :--- |
 | Framework | Next.js 15 (App Router + Turbopack) |
 | Language | TypeScript 5 (Strict Mode) |
 | UI Library | MUI v7 (Material UI) |
@@ -22,9 +22,9 @@
 
 - **🔐 Secure Registration:** ระบบสมัครสมาชิกที่บังคับใช้ **Referral ID** เท่านั้น พร้อมรองรับการผูกบัญชี **MT5 ID** และ **Investor's Password** ตั้งแต่ขั้นตอนสมัคร
 - **📊 My Account Dashboard (Optimized):** ส่วนจัดการบัญชีที่แสดงข้อมูลการเงินเชิงลึก ทำงานด้วยความเร็วสูงผ่าน Endpoint เฉพาะ:
-    - **Performance:** Today, Week, Month Trading Profit
-    - **Capital Flow:** สรุปยอดฝาก (Deposits) และยอดถอน (Withdrawals) แยกจากกัน
-    - **Gross vs Net:** แสดงกำไรสะสม (Gross), ส่วนแบ่งแพลตฟอร์ม (Profit Sharing - PF), และกำไรสุทธิจริงหลังแบ่ง (Net Gain)
+  - **Performance:** Today, Week, Month Trading Profit
+  - **Capital Flow:** สรุปยอดฝาก (Deposits) และยอดถอน (Withdrawals) แยกจากกัน
+  - **Gross vs Net:** แสดงกำไรสะสม (Gross), ส่วนแบ่งแพลตฟอร์ม (Profit Sharing - PF), และกำไรสุทธิจริงหลังแบ่ง (Net Gain)
 - **🌓 Centralized Theme Control:** รวมจุดเปลี่ยน Light/Dark Mode ไว้ที่ Top Bar เพียงจุดเดียวเพื่อความสะอาดตา
 - **🚀 Partner Integration:** ปุ่ม "สมัคร Strikepro" ใน Top Bar เพื่อการเชื่อมต่อพาร์ทเนอร์ที่รวดเร็ว
 - **🎨 UI Cleanup:** ปรับปรุง Layout ให้มีความ Minimalist สูงสุด ลบโลโก้และฟิลด์ที่ไม่จำเป็นออกเพื่อให้พื้นที่แสดงข้อมูลมากที่สุด
@@ -35,7 +35,7 @@
 
 โปรเจคใช้ **Feature-based Clean Architecture** แยก Layer ชัดเจน (อ่านรายละเอียดได้ที่ [ARCHITECTURE.md](file:///d:/Users/naruechatbu/Work/__Personal__/DashboardGpilot/Frontend/ARCHITECTURE.md)):
 
-```
+```text
 src/
 ├── app/                        # Next.js App Router (Route Definitions)
 │   ├── (auth)/                 # Route Group: Authenticated logic (Login/Register)
@@ -82,7 +82,7 @@ npm install
 ### 2. ตั้งค่า Environment Variables (.env)
 
 | Variable | คำอธิบาย |
-|----------|----------|
+| :--- | :--- |
 | `API_URL` | URL ของ Backend API (Internal) |
 | `API_KEY` | Key สำหรับการ Authentication กับ Backend |
 | `NEXT_PUBLIC_API_URL` | ตั้งค่าเป็น `/api/gateway` (Proxy Path) |
@@ -91,7 +91,7 @@ npm install
 ### 3. คำสั่งที่สำคัญ (Scripts)
 
 | คำสั่ง | คำอธิบาย |
-|---------|-----------|
+| :--- | :--- |
 | `npm run dev` | รัน Development Server (Turbopack) |
 | `npm run build` | บิลด์สำหรับ Production |
 | `npm run test` | รันการทดสอบ (Watch Mode) |
@@ -103,7 +103,7 @@ npm install
 
 ## 🔄 Data Flow
 
-```
+```text
 User visits /dashboard
   → Server Component renders (static shell)
   → useDashboardData() hook fetches data client-side
@@ -116,14 +116,47 @@ User visits /dashboard
 
 ---
 
-## 🧪 Mock Mode
+## 🔗 Referral System (Security Obfuscation)
+
+ลิงก์ Referral ถูกออกแบบมาให้ซ่อน User ID จริงเพื่อบรรเทาปัญหาการแก้ไข URL โดยตรงจากผู้ใช้งาน (Security by Obfuscation)
+ 
+### 1. รูปแบบลิงก์
+
+`https://gpilotsystem.com/register?ref=[EncodedValue]`
+
+### 2. ตรรกะการเข้ารหัส (Frontend)
+
+การเข้ารหัสทำใน `src/features/account/hooks/use-account-data.ts`:
+1. เติม Prefix `GP-` หน้า User ID (เช่น `12345` -> `GP-12345`)
+2. แปลงเป็น **Base64** (Encoding)
+3. ตัดเครื่องหมาย `=` (Padding) ออกเพื่อให้ URL ดูสะอาดตา
+
+### 3. วิธีการถอดรหัส (Backend/Registration Page)
+
+หากต้องการดึง User ID ดั้งเดิมกลับมาใช้งาน ให้ทำดังนี้:
+1. นำ `EncodedValue` มาทำ **atob()** (Decoding)
+2. ตัด String 3 ตัวแรกออก (`GP-`) จะได้ User ID ที่เป็นตัวเลขจริง
+
+---
+
+## 📊 Referral Sync System
+
+ระบบสรุปข้อมูลสถิติรายสัปดาห์จากบัญชีเพื่อน (Referrals)
+- **Weekly Summary:** แสดงยอด Commission รวมรายสัปดาห์
+- **Export Action:** รองรับการส่งออกข้อมูลเป็น CSV/Excel
+- **Error Handling:** แสดงสถานะความผิดพลาดรายบุคคล
+
+---
+ 
+ ## 🧪 Mock Mode
 
 เมื่อตั้ง `NEXT_PUBLIC_IS_MOCK_MODE=true` ทุก Service จะคืนข้อมูลจำลอง ทำให้ทีม UI พัฒนาได้โดยไม่ต้องรอ Backend:
 
 | Service | Mock Data |
 |---------|-----------|
+| `TradeHistoryService.getReferralHistory()` | ข้อมูลซิงค์เพื่อนรายสัปดาห์ $450.75 |
 | `AccountService.getAccountInfo()` | ข้อมูลบัญชีจำลอง, Balance $10,000 |
-| `AccountService.getAccountSummary()` | [NEW] ข้อมูลสรุปการเงินจำลองสำหรับหน้า Account |
+| `AccountService.getAccountSummary()` | ข้อมูลสรุปการเงินจำลองสำหรับหน้า Account |
 | `TradeHistoryService.getHistory()` | รายการเทรด 6 รายการ: XAUUSD, EURUSD, GBPUSD |
 
 ---
@@ -133,7 +166,7 @@ User visits /dashboard
 ตาม Global Rules #10 — ห้าม fetch ตรงจาก UI Component:
 
 | Client | ใช้เมื่อ | Path |
-|--------|---------|------|
+| :--- | :--- | :--- |
 | `apiClient` | Client Components | `/api/gateway/*` (proxy) |
 | `apiServer` | Server Components / Server Actions | Direct backend URL |
 
@@ -152,7 +185,7 @@ User visits /dashboard
 ## 📂 Naming Conventions
 
 | สิ่ง | รูปแบบ | ตัวอย่าง |
-|-----|--------|---------|
+| :--- | :--- | :--- |
 | React Components | PascalCase | `MetricCard.tsx` |
 | Files (non-component) | kebab-case | `api-client.ts`, `logger.ts` |
 | Hooks | `use` (camelCase) | `use-dashboard-data.ts` |

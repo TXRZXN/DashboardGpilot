@@ -163,9 +163,13 @@ export interface CashflowSummary {
 
 export interface AccountSummary {
   readonly balance: number;
-  readonly profitToday: number;
-  readonly profitWeek: number;
-  readonly profitMonth: number;
+
+  // Profile Data
+  readonly name: string;
+  readonly login: number;
+  readonly server: string;
+  readonly leverage: number;
+  readonly currency: string;
   
   readonly grossTradeProfit: number;
   readonly totalDeposits: number;
@@ -219,6 +223,31 @@ export interface GroupedTradesResponse {
   netProfit: number;
   fee: number;
   paginated: GroupedTradesPage;
+}
+
+// ---------------------------------------------
+// Referral Sync Types
+// ---------------------------------------------
+
+export interface ReferralSyncTrade {
+  readonly email: string;
+  readonly accountId: string;
+  readonly amount: number;
+  readonly currency: string;
+  readonly date: string;
+  readonly status: 'success' | 'failed';
+  readonly error?: string;
+}
+
+export interface ReferralSyncSummary {
+  readonly totalThisWeek: number;
+  readonly lastSync: string;
+  readonly trades: ReferralSyncTrade[];
+}
+
+export interface ReferralSyncRequest {
+  readonly from_date?: string;
+  readonly to_date?: string;
 }
 
 // ---------------------------------------------

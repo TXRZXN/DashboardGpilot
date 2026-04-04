@@ -20,6 +20,25 @@ export function getMostRecentMonday(date: Date = new Date()): Date {
 }
 
 /**
+ * หาวันอาทิตย์ที่จะถึงของสัปดาห์นั้นๆ (End of Week Sunday)
+ */
+export function getEndOfWeek(date: Date): Date {
+  const result = getMostRecentMonday(date);
+  result.setDate(result.getDate() + 6);
+  result.setHours(23, 59, 59, 999);
+  return result;
+}
+
+/**
+ * เพิ่ม/ลด จำนวนวัน
+ */
+export function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+/**
  * แปลง Date เป็น ISO String เฉพาะวันที่ (YYYY-MM-DD)
  */
 export function toISODateString(date: Date): string {

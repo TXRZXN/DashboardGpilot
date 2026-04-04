@@ -17,11 +17,22 @@ import {
 import type { AccountInfo } from "@/shared/types/api";
 
 interface ProfileCardProps {
-  readonly account: AccountInfo | null;
+  readonly name: string;
+  readonly login: number;
+  readonly server: string;
+  readonly leverage: number;
+  readonly currency: string;
   readonly loading: boolean;
 }
 
-export function ProfileCard({ account, loading }: Readonly<ProfileCardProps>) {
+export function ProfileCard({ 
+  name, 
+  login, 
+  server, 
+  leverage, 
+  currency, 
+  loading 
+}: Readonly<ProfileCardProps>) {
   return (
     <Card sx={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
       <Box sx={{ height: 100, bgcolor: 'primary.main', opacity: 0.1, position: 'absolute', top: 0, left: 0, right: 0 }} />
@@ -44,7 +55,7 @@ export function ProfileCard({ account, loading }: Readonly<ProfileCardProps>) {
               <Skeleton width={200} height={32} />
             ) : (
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {account?.name ?? "Trader Name"}
+                {loading ? <Skeleton width={200} /> : (name || "Trader Name")}
               </Typography>
             )}
             <Typography variant="caption" sx={{ color: "text.secondary", display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -58,19 +69,19 @@ export function ProfileCard({ account, loading }: Readonly<ProfileCardProps>) {
         <Grid container spacing={2}>
           <Grid size={{ xs: 6 }}>
             <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5, display: 'block' }}>Account ID</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>#{account?.login ?? "-"}</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>#{loading ? <Skeleton /> : (login || "-")}</Typography>
           </Grid>
           <Grid size={{ xs: 6 }}>
             <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5, display: 'block' }}>Server</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{account?.server ?? "-"}</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>{loading ? <Skeleton /> : (server || "-")}</Typography>
           </Grid>
           <Grid size={{ xs: 6 }}>
             <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5, display: 'block' }}>Leverage</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>1:{account?.leverage ?? "-"}</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>1:{loading ? <Skeleton /> : (leverage || "-")}</Typography>
           </Grid>
           <Grid size={{ xs: 6 }}>
             <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5, display: 'block' }}>Currency</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{account?.currency ?? "-"}</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>{loading ? <Skeleton /> : (currency || "-")}</Typography>
           </Grid>
         </Grid>
       </CardContent>
