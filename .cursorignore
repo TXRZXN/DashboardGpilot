@@ -1,0 +1,27 @@
+# Ignore build artifacts
+.next/
+node_modules/
+coverage/
+dist/
+build/
+.turbo/
+
+# Ignore large sample/mock data
+TradeHistory.json
+Account.json
+*.json.bak
+
+# Ignore environment files (already in .gitignore but explicit for Cursor)
+.env
+.env.local
+.env.*.local
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore IDE/OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

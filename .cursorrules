@@ -8,6 +8,7 @@
 
 - **ทำ Plan เป็นภาษาไทยทุกครั้ง** ก่อนเริ่มลงมือทำ Task ที่มีความซับซ้อน
 - **Documentation:** มี README และคำอธิบาย Architecture สำหรับส่วนที่สำคัญ
+- **Project Map:** รักษาความถูกต้องของ [PROJECT_MAP.md](file:///d:/EAGold/Gpliot/GPilotFrontEnd/PROJECT_MAP.md) เพื่อเป็นสารบัญให้ AI ทำงานได้รวดเร็ว
 
 ### 2. 🏛 สถาปัตยกรรม (Architecture & Design)
 

@@ -33,7 +33,7 @@
 
 ## 🏗 Architecture
 
-โปรเจคใช้ **Feature-based Clean Architecture** แยก Layer ชัดเจน (อ่านรายละเอียดได้ที่ [ARCHITECTURE.md](file:///d:/Users/naruechatbu/Work/__Personal__/DashboardGpilot/Frontend/ARCHITECTURE.md)):
+โปรเจคใช้ **Feature-based Clean Architecture** แยก Layer ชัดเจน (อ่านรายละเอียดได้ที่ [ARCHITECTURE.md](file:///d:/EAGold/Gpliot/GPilotFrontEnd/ARCHITECTURE.md) และดูสารบัญโค้ดได้ที่ [PROJECT_MAP.md](file:///d:/EAGold/Gpliot/GPilotFrontEnd/PROJECT_MAP.md)):
 
 ```text
 src/
