@@ -4,15 +4,20 @@ This document describes the high-level architecture and design decisions for the
 
 ## 🗺 System Context
 
-The DashboardGpilot Frontend is part of a larger ecosystem designed for real-time Forex trading management. It acts as the primary user interface for traders to monitor their accounts and manage their investments.
+The DashboardGpilot Frontend operates in a **Microservice Architecture** where each product operates as an independent service. The dashboard orchestrates these services based on user roles and permissions.
 
 ```mermaid
 graph TD
-    User((User/Trader)) -->|Interacts with| Frontend[DashboardGpilot Frontend]
-    Frontend -->|HTTP / JSON via Next.js Proxy| BackendMain[Backend-Main API]
-    Frontend -->|HTTP / JSON via Next.js Proxy| BackendSub[Backend-Sub API]
-    BackendMain -->|Retrieves data| MT5[MetaTrader 5 Client]
-    BackendSub -->|Manages| AuthDB[(Auth Database)]
+    User((User/Trader)) -->|Logs in| LoginVPS[Login VPS]
+    LoginVPS -->|Returns JWT| Frontend[DashboardGpilot Frontend]
+    
+    Frontend -->|Bearer Token| GpilotAPI[Gpilot Service]
+    Frontend -->|Bearer Token| SafegrowAPI[Safegrow Service]
+    Frontend -->|Bearer Token| BangranjanAPI[Bangranjan Service]
+    Frontend -->|Bearer Token| Others[Other Product Services...]
+    
+    GpilotAPI -->|Verifies JWT| MT5[MetaTrader 5]
+    LoginVPS -->|Manages| AuthDB[(Auth Database)]
 ```
 
 ## 🏗 Component Diagram (Folder Structure)
@@ -23,18 +28,15 @@ The project follows a **Feature-based Clean Architecture** to ensure separation 
 src/
 ├── app/                        # Next.js App Router (Routing & Pages)
 ├── features/                   # Feature Modules (Feature UI + Hooks)
-│   ├── account/                # Components specific to account
-│   ├── dashboard/              # Home Overview & Analytics [REFACTORED]
-│   ├── history/                # Trade Logs
-│   └── cashflow/               # Fund Movements
+│   ├── dashboard/              # Home Overview: Parallel Fetching & RBAC [REFACTORED]
+│   ├── product-detail/         # Product Performance Analytics
+│   ├── history/                # Trade Logs with Background Sync
+│   └── auth/                   # Identity Management
 ├── shared/                     # Shared cross-feature code
-│   ├── ui/                     # Presentation Layer: Reusable UI (DataTable, Charts, RiskMetrics) [UPDATED]
-│   ├── api/                    # Infrastructure: API client & Endpoints
-│   ├── services/               # Application Layer: Business Flow Orchestration
-│   ├── types/                  # Domain Models & Type Definitions
-│   └── utils/                  # Utility Functions (Crypto, Logger, etc.)
-├── layouts/                    # Shared Layouts (Sidebar, TopBar)
-└── styles/                     # Global Styles & Themes
+│   ├── api/                    # Infrastructure: API client & Dynamic Endpoints
+│   ├── services/               # Application Layer: Service Parameterization & Mocks
+│   ├── types/                  # Domain Models & API Types
+│   └── mock/                   # Mock Data Fallbacks for non-active services
 ```
 
 ### Layer Responsibility
@@ -45,39 +47,79 @@ src/
    - **App Router**: Renders static shell and handles routing.
 2. **Application Layer (`shared/services/`)**: Orchestrates the business flow, calls API clients (Infrastructure), and transforms data into Domain-friendly models.
 3. **Domain Layer (`shared/types/domain/`)**: Contains pure business entities and rules. No external dependencies.
-4. **Infrastructure Layer (`shared/api/`)**: Handles external communication (HTTP fetch), error handling, and cross-cutting concerns (logging, tracing).
+4. **Infrastructure Layer (`shared/api/`)**: Handles external communication (HTTP fetch), Bearer Token injection from localStorage, error handling, and cross-cutting concerns (logging, tracing).
 
 ---
 
-## 🗺 Project Map (Table of Contents)
+## 🔐 Role-Based Access Control (RBAC)
 
-For a detailed index of files and folders, please refer to [PROJECT_MAP.md](file:///d:/EAGold/Gpliot/GPilotFrontEnd/PROJECT_MAP.md).
+The application implements a frontend-gated RBAC system to manage product visibility:
+
+| Role | Access Permissions |
+| :--- | :--- |
+| **Admin** | Access to all products (Gpilot, Safegrow, Bangranjan, PPVP, GoldenBoy) |
+| **Role A** | Access to Safe Grow, Gpilot, and Bangranjan |
+| **Role B** | Access to PPVP, GoldenBoy, and Bangranjan |
+
+Visibility is controlled via `ROLE_PERMISSIONS` in `DashboardPage.tsx`, ensuring users only see relevant products on their dashboard.
+
+---
+
+## 📡 API Dynamic Routing
+
+To support microservices, the **Infrastructure Layer** (`apiClient`) supports dynamic `serviceBase` paths defined in `endpoint.ts`:
+
+- `SERVICE_BASE_GPILOT`: `/api/gateway/gpilot`
+- `SERVICE_BASE_SAFEGROW`: `/api/gateway/safegrow`
+- ...and others.
 
 ---
 
 ## 📊 Key Data Flows
 
-### 1. User Registration Flow
+### 1. Dashboard Parallel Fetching
 
-1. User submits registration form in `features/auth`.
-2. `AuthService.register()` is called.
-3. Password for MT5 is encrypted using `CryptoUtils` (AES-256-GCM).
-4. `apiClient` sends data to the `Backend-Sub`.
-5. `Backend-Sub` validates and stores the user.
+1. `DashboardPage` renders based on user role.
+2. Multiple `DashboardCard` components are rendered.
+3. Each card independently executes `useProductDetailData(serviceBase)`.
+4. Individual **Skeletons** are shown until each independent API request completes.
 
-### 2. Account Data Fetching (Optimized)
+### 2. Product Detail & Background Sync
 
-1. Page in `app/account` renders.
-2. `useAccountData()` hook calls `AccountService.getAccountSummary()`.
-3. `AccountService` calls `apiClient` via the Next.js Gateway Proxy to the optimized `/api/v1/dashboard/account` endpoint.
-4. Data is returned as a lightweight summary, reducing bandwidth and CPU usage.
+1. User selects a product, navigating to `/product-detail?base=...`.
+2. `ProductDetailPage` fetches primary metrics (blocking).
+3. Simultaneously, `TradeHistoryService.getHistory()` is triggered in the **background** to update the database state without blocking the UI.
 
 ---
 
 ## 📡 Observability Strategy
 
-- **Structured Logging**: All logs are handled by `src/shared/utils/logger.ts` with levels (INFO, WARN, ERROR, DEBUG).
-- **Distributed Tracing**: Every request generated by `apiClient` includes a unique `X-Trace-ID` header.
+- **Structured Logging**: All logs follow a JSON format for better observability.
+- **Trace IDs**: Distributed tracing enabled via `X-Trace-ID` headers across all service calls.
+
+## API Integration & Routing
+
+The system utilizes two distinct backend services which are harmonized via the `apiClient` utility:
+
+### 1. Main Backend (GPilotBackend)
+- **Scope**: Account-specific data (Trades, Analytics, History).
+- **URL Pattern**: `/api/v1/{accountId}/{endpoint}` (e.g., `/api/v1/gpilot/trades`).
+- **Base Path**: `/api/gateway/gpilot`.
+
+### 2. Sub Backend (GpilotBackendSub)
+- **Scope**: Global system operations (Auth, Cross-account Sync).
+- **URL Pattern**: `/api/v1/{endpoint}` (e.g., `/api/v1/auth/login`).
+- **Base Path**: `/api/gateway/sub`.
+
+### Routing Logic
+The `apiClient` automatically handle these patterns:
+- It detects the `serviceBase` provided.
+- For `Main` services, it injects the `accountId` (extracted from the gateway path) into the final API route.
+- For `Sub` services, it uses a flat global route.
+
+## Local Development
+For local development, `next.config.mjs` uses `rewrites` to proxy gateway paths to the respective local servers (Port 8000 for Main, Port 8001 for Sub).
+
 - **Error Handling**: Standardized `ApiError` class and `ServiceResponse` wrapper ensure consistent error reporting across the application.
 
 ---

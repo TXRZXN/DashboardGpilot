@@ -41,6 +41,7 @@ function ProductDetailContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const productName = searchParams.get("name") ?? "Product Detail";
+    const serviceBase = searchParams.get("base") ?? undefined;
     const [activeTab, setActiveTab] = useState(0);
 
     const {
@@ -55,7 +56,7 @@ function ProductDetailContent() {
         profitWeek,
         profitMonth,
         formatCurrency,
-    } = useProductDetailData();
+    } = useProductDetailData(serviceBase || undefined);
 
     const balance = account?.balance ?? 0;
     const metrics = [
@@ -240,7 +241,7 @@ function ProductDetailContent() {
             {/* Tab Panel: Trade History */}
             {activeTab === 1 && (
                 <Box role="tabpanel" id="tabpanel-history" aria-labelledby="tab-history">
-                    <HistoryTab />
+                    <HistoryTab serviceBase={serviceBase || undefined} />
                 </Box>
             )}
         </Box>

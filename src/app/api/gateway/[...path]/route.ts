@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * API Gateway Proxy Handler
  * ทำหน้าที่เป็นคนกลางในการรับ Request จาก Browser 
- * แล้วแนบ API Key ก่่อนส่งไปหา Backend จริง
+ * แล้วแนบ API Key ก่อนส่งไปหา Backend จริง
  */
 export async function GET(
   request: NextRequest,
@@ -24,25 +24,42 @@ async function handleRequest(
   { path }: { path: string[] }
 ) {
   try {
-    // 1. ติจารณาส่วนหัวของ Path เพื่อเลือก Backend
     let targetBaseUrl = "";
     let targetApiKey = "";
-    let finalPathSegments = [...path];
+    let finalPathSegments: string[] = [];
 
-    if (path[0] === "sub") {
-      // ยิงไป Backend-Sub
-      targetBaseUrl = process.env.API_URL_SUB || "http://localhost:8001";
+    const prefix = path[0];
+    const SERVICE_MAP: Record<string, string | undefined> = {
+      gpilot: process.env.API_URL_GPILOT,
+      safegrow: process.env.API_URL_SAFEGROW,
+      ppvp: process.env.API_URL_PPVP,
+      goldenboy: process.env.API_URL_GOLDENBOY,
+      bangranjan: process.env.API_URL_BANGRANJAN,
+      sub: process.env.API_URL_SUB,
+      main: process.env.API_URL_MAIN || process.env.API_URL,
+    };
+
+    if (SERVICE_MAP[prefix]) {
+      targetBaseUrl = SERVICE_MAP[prefix]!;
       targetApiKey = process.env.INTERNAL_API_KEY || "";
-      finalPathSegments = path.slice(1);
-    } else if (path[0] === "main") {
-      // ยิงไป Backend-Main (Explicit)
-      targetBaseUrl = process.env.API_URL_MAIN || process.env.API_URL || "http://localhost:8000";
-      targetApiKey = process.env.INTERNAL_API_KEY || "";
-      finalPathSegments = path.slice(1);
+      
+      const remainingPath = path.slice(1);
+      
+      // Backend ใหม่ต้องการ: /api/v1/{account_id}/...
+      // ถ้าต้นทางมาเป็น /api/gateway/gpilot/api/v1/history
+      // ต้องส่งไปเป็น http://backend/api/v1/gpilot/history
+      if (remainingPath[0] === 'api' && remainingPath[1] === 'v1') {
+        const afterV1 = remainingPath.slice(2);
+        finalPathSegments = ["api", "v1", prefix, ...afterV1];
+      } else {
+        // กรณีทั่วไปหรือ path อื่นๆ ให้ส่งตามปกติโดยตัด prefix ออก
+        finalPathSegments = remainingPath;
+      }
     } else {
       // กรณี Legacy หรือไม่มี Prefix ให้ยิงไป Backend-Main เป็น Default
       targetBaseUrl = process.env.API_URL_MAIN || process.env.API_URL || "http://localhost:8000";
       targetApiKey = process.env.INTERNAL_API_KEY || "";
+      finalPathSegments = [...path];
     }
     
     // สร้าง Search Params จาก URL ที่ส่งมา
@@ -79,7 +96,6 @@ async function handleRequest(
       return new NextResponse(text, { status: response.status, statusText: response.statusText });
     }
   } catch (error) {
-    // ❌ ไม่ใช้ console.error ตาม Global Rules — Error จะถูก return ใน response แทน
     return NextResponse.json(
       {
         success: false,

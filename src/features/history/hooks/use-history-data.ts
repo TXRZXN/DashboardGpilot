@@ -25,7 +25,7 @@ export interface HistoryTotals {
  * useHistoryData
  * ดึง Grouped Trades จาก Backend โดยใช้ Server-side Pagination, Sorting และ Filtering
  */
-export function useHistoryData() {
+export function useHistoryData(serviceBase?: string) {
   const { isHealthy } = useApiHealth();
 
   const [trades, setTrades] = useState<GroupedDeal[]>([]);
@@ -74,7 +74,7 @@ export function useHistoryData() {
       setLoading(true);
       setError(null);
 
-      // Parallel Fetch 3: Grouped Trades + Sync + Health
+      // Parallel Fetch 3: Grouped Trades + Health
       const [response, healthResponse] = await Promise.all([
         AnalyticsService.getGroupedTrades({
           page: page + 1, // API is 1-indexed
@@ -85,12 +85,9 @@ export function useHistoryData() {
           type: typeFilter === "ALL" ? null : typeFilter,
           order_by: sortField,
           order_dir: sortDirection.toUpperCase() as "ASC" | "DESC"
-        }),
+        }, serviceBase),
         HealthService.checkHealth()
       ]);
-
-      // Background Sync - trigger the sync but don't wait
-      TradeHistoryService.getHistory().catch(() => null);
 
       if (healthResponse.success && healthResponse.data?.status === "ok") {
         if (response.success && response.data) {
@@ -129,7 +126,8 @@ export function useHistoryData() {
     startDate, 
     endDate, 
     sortField, 
-    sortDirection
+    sortDirection,
+    serviceBase // Add serviceBase dependency
   ]);
 
   useEffect(() => {

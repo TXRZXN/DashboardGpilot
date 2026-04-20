@@ -20,40 +20,27 @@
 
 ## ✨ Key Features (ล่าสุด)
 
-- **🔐 Secure Registration:** ระบบสมัครสมาชิกที่บังคับใช้ **Referral ID** เท่านั้น พร้อมรองรับการผูกบัญชี **MT5 ID** และ **Investor's Password** ตั้งแต่ขั้นตอนสมัคร
-- **📊 My Account Dashboard (Optimized):** ส่วนจัดการบัญชีที่แสดงข้อมูลการเงินเชิงลึก ทำงานด้วยความเร็วสูงผ่าน Endpoint เฉพาะ:
-  - **Performance:** Today, Week, Month Trading Profit
-  - **Capital Flow:** สรุปยอดฝาก (Deposits) และยอดถอน (Withdrawals) แยกจากกัน
-  - **Gross vs Net:** แสดงกำไรสะสม (Gross), ส่วนแบ่งแพลตฟอร์ม (Profit Sharing - PF), และกำไรสุทธิจริงหลังแบ่ง (Net Gain)
-- **🌓 Centralized Theme Control:** รวมจุดเปลี่ยน Light/Dark Mode ไว้ที่ Top Bar เพียงจุดเดียวเพื่อความสะอาดตา
-- **🚀 Partner Integration:** ปุ่ม "สมัคร Strikepro" ใน Top Bar เพื่อการเชื่อมต่อพาร์ทเนอร์ที่รวดเร็ว
-- **🎨 UI Cleanup:** ปรับปรุง Layout ให้มีความ Minimalist สูงสุด ลบโลโก้และฟิลด์ที่ไม่จำเป็นออกเพื่อให้พื้นที่แสดงข้อมูลมากที่สุด
+- **🔐 Multi-Service RBAC:** ระบบจัดการสิทธิ์การเข้าถึงผลิตภัณฑ์ (Admin, Role A, Role B) แยกตาม Microservice ของแต่ละผลิตภัณฑ์
+- **⚡ Parallel Data Fetching:** หน้า Dashboard โหลดข้อมูลแต่ละผลิตภัณฑ์แยกจากกันอิสระ (Parallel) โดยตัวที่เสร็จก่อนจะแสดงผลก่อนทันที ไม่ต้องรอกัน
+- **📊 Real-time Analytics:** ระบบสรุปสถิติการเทรด (Balance, Profit, Win Rate) แบบเรียลไทม์จาก MT5
+- **🔄 Background Sync:** ระบบอัปเดตข้อมูลประวัติการเทรดทำงานเบื้องหลัง (Detail Page) เพื่อประสบการณ์การใช้งานที่ลื่นไหล
+- **🔐 Secure Access:** ระบบสมัครสมาชิกและล็อกอินที่เน้นความปลอดภัยสูงสุด รองรับ **Centralized Auth (JWT/Bearer Token)**
 
 ---
 
 ## 🏗 Architecture
 
-โปรเจคใช้ **Feature-based Clean Architecture** แยก Layer ชัดเจน (อ่านรายละเอียดได้ที่ [ARCHITECTURE.md](file:///d:/EAGold/Gpliot/GPilotFrontEnd/ARCHITECTURE.md) และดูสารบัญโค้ดได้ที่ [PROJECT_MAP.md](file:///d:/EAGold/Gpliot/GPilotFrontEnd/PROJECT_MAP.md)):
+โปรเจคใช้ **Feature-based Clean Architecture** (อ่านรายละเอียดได้ที่ [ARCHITECTURE.md](file:///d:/EAGold/Gpliot/GPilotFrontEnd/ARCHITECTURE.md)):
 
 ```text
 src/
-├── app/                        # Next.js App Router (Route Definitions)
-│   ├── (auth)/                 # Route Group: Authenticated logic (Login/Register)
-│   └── (Gpilot)/               # Route Group: requires sidebar layout
-│       ├── dashboard/          # Home Overview
-│       ├── account/            # My Account & Financials [NEW]
-│       └── history/            # Trade Logs
-│
+├── app/                        # Next.js App Router (Routing)
 ├── features/                   # Feature Modules (UI + Application Layer)
-│   ├── auth/                   # Identity Management (Login, Register)
-│   ├── account/                # Account & Financial Metrics [REFACTORED]
-│   │   └── components/         # Feature-specific UI components
-│   ├── dashboard/              # Dashboard feature
 │   ├── history/                # Trade History feature
 │   └── cashflow/               # Cashflow feature
 │
 ├── shared/                     # Shared cross-feature code
-│   ├── ui/                     # Reusable UI Components (DataTable, Gauge, Charts) [NEW]
+│   ├── ui/                     # Reusable UI Components (DataTable, Gauge, Charts)
 │   ├── api/                    # Infrastructure: API clients
 │   ├── services/               # Application Layer: Business logic
 │   ├── types/                  # Domain Types (shared TypeScript interfaces)
@@ -73,30 +60,34 @@ src/
 - **Node.js:** เวอร์ชั่น 18.x ขึ้นไป (แนะนำ **v22.19.0**)
 - **NPM:** เวอร์ชั่น 10.x ขึ้นไป
 
-### 1. ติดตั้ง dependencies
+### 1. Installation
 
 ```bash
 npm install
 ```
 
-### 2. ตั้งค่า Environment Variables (.env)
+### 2. Running for Development
+เพื่อให้ Frontend ทำงานครบทุกฟีเจอร์ ต้องรัน Backend ทั้งสองส่วนควบคู่กัน:
+1. **Backend-Main**: `localhost:8000` (จัดการข้อมูลเทรดเรียลไทม์)
+2. **Backend-Sub**: `localhost:8001` (จัดการระบบ Auth และ Sync)
+
+Frontend จะใช้ระบบ `rewrites` ใน `next.config.mjs` เพื่อส่งต่อ Request ไปยัง Backend ที่ถูกต้องโดยอัตโนมัติผ่าน path `/api/gateway/...`
+
+### 3. ตั้งค่า Environment Variables (.env)
 
 | Variable | คำอธิบาย |
 | :--- | :--- |
-| `API_URL` | URL ของ Backend API (Internal) |
-| `API_KEY` | Key สำหรับการ Authentication กับ Backend |
 | `NEXT_PUBLIC_API_URL` | ตั้งค่าเป็น `/api/gateway` (Proxy Path) |
-| `NEXT_PUBLIC_IS_MOCK_MODE` | ตั้งเป็น `true` เพื่อใช้ข้อมูลจำลอง (ข้อมูลใน History และ Account จะโหลดจาก Mock) |
+| `NEXT_PUBLIC_IS_MOCK_MODE` | ตั้งเป็น `true` เพื่อใช้ข้อมูลจำลอง |
+| `NEXT_PUBLIC_MT5_ENCRYPTION_KEY` | Hex Key สำหรับเข้ารหัสรหัสผ่าน MT5 (ต้องตรงกับ Backend-Sub) |
 
-### 3. คำสั่งที่สำคัญ (Scripts)
+### 4. คำสั่งที่สำคัญ (Scripts)
 
 | คำสั่ง | คำอธิบาย |
 | :--- | :--- |
 | `npm run dev` | รัน Development Server (Turbopack) |
 | `npm run build` | บิลด์สำหรับ Production |
 | `npm run test` | รันการทดสอบ (Watch Mode) |
-| `npm run test:run` | รันการทดสอบครั้งเดียว |
-| `npm run test:coverage` | ตรวจสอบ Code Coverage |
 | `npm run lint` | ตรวจสอบ Code Quality (ESLint) |
 
 ---
@@ -107,88 +98,28 @@ npm install
 User visits /dashboard
   → Server Component renders (static shell)
   → useDashboardData() hook fetches data client-side
-  → apiClient("/api/v1/...") → Next.js Gateway Proxy (/api/gateway/*)
-  → FastAPI Backend → MT5Client → MetaTrader 5
-  → ServiceResponse<T> flows back to UI
+  → apiClient() retrieves auth_token from localStorage
+  → apiClient("/api/v1/...") → Authorization: Bearer <token>
+  → Next.js Rewrite → Proxy to local Backend (8000 or 8001)
+  → FastAPI Backend logic execution
 ```
-
----
 
 ---
 
 ## 🔗 Referral System (Security Obfuscation)
 
-ลิงก์ Referral ถูกออกแบบมาให้ซ่อน User ID จริงเพื่อบรรเทาปัญหาการแก้ไข URL โดยตรงจากผู้ใช้งาน (Security by Obfuscation)
- 
-### 1. รูปแบบลิงก์
+ลิงก์ Referral ถูกออกแบบมาให้ซ่อน User ID จริงเพื่อบรรเทาปัญหาการแก้ไข URL โดยตรงจากผู้ใช้งาน
 
+### 1. รูปแบบลิงก์
 `https://gpilotsystem.com/register?ref=[EncodedValue]`
 
 ### 2. ตรรกะการเข้ารหัส (Frontend)
-
 การเข้ารหัสทำใน `src/features/account/hooks/use-account-data.ts`:
 1. เติม Prefix `GP-` หน้า User ID (เช่น `12345` -> `GP-12345`)
 2. แปลงเป็น **Base64** (Encoding)
-3. ตัดเครื่องหมาย `=` (Padding) ออกเพื่อให้ URL ดูสะอาดตา
-
-### 3. วิธีการถอดรหัส (Backend/Registration Page)
-
-หากต้องการดึง User ID ดั้งเดิมกลับมาใช้งาน ให้ทำดังนี้:
-1. นำ `EncodedValue` มาทำ **atob()** (Decoding)
-2. ตัด String 3 ตัวแรกออก (`GP-`) จะได้ User ID ที่เป็นตัวเลขจริง
+3. ตัดเครื่องหมาย `=` (Padding) ออก
 
 ---
 
-## 📊 Referral Sync System
-
-ระบบสรุปข้อมูลสถิติรายสัปดาห์จากบัญชีเพื่อน (Referrals)
-- **Weekly Summary:** แสดงยอด Commission รวมรายสัปดาห์
-- **Export Action:** รองรับการส่งออกข้อมูลเป็น CSV/Excel
-- **Error Handling:** แสดงสถานะความผิดพลาดรายบุคคล
-
----
- 
- ## 🧪 Mock Mode
-
-เมื่อตั้ง `NEXT_PUBLIC_IS_MOCK_MODE=true` ทุก Service จะคืนข้อมูลจำลอง ทำให้ทีม UI พัฒนาได้โดยไม่ต้องรอ Backend:
-
-| Service | Mock Data |
-|---------|-----------|
-| `TradeHistoryService.getReferralHistory()` | ข้อมูลซิงค์เพื่อนรายสัปดาห์ $450.75 |
-| `AccountService.getAccountInfo()` | ข้อมูลบัญชีจำลอง, Balance $10,000 |
-| `AccountService.getAccountSummary()` | ข้อมูลสรุปการเงินจำลองสำหรับหน้า Account |
-| `TradeHistoryService.getHistory()` | รายการเทรด 6 รายการ: XAUUSD, EURUSD, GBPUSD |
-
----
-
-## 📌 API Layer Pattern
-
-ตาม Global Rules #10 — ห้าม fetch ตรงจาก UI Component:
-
-| Client | ใช้เมื่อ | Path |
-| :--- | :--- | :--- |
-| `apiClient` | Client Components | `/api/gateway/*` (proxy) |
-| `apiServer` | Server Components / Server Actions | Direct backend URL |
-
-ทุก Service คืนค่าในรูปแบบ `ServiceResponse<T>`:
-
-```typescript
-{
-  success: boolean;
-  data: T | null;
-  error: string | ValidationErrorDetail[] | null;
-}
-```
-
----
-
-## 📂 Naming Conventions
-
-| สิ่ง | รูปแบบ | ตัวอย่าง |
-| :--- | :--- | :--- |
-| React Components | PascalCase | `MetricCard.tsx` |
-| Files (non-component) | kebab-case | `api-client.ts`, `logger.ts` |
-| Hooks | `use` (camelCase) | `use-dashboard-data.ts` |
-| Services | kebab-case | `account-service.ts` |
-| Types/Interfaces | PascalCase | `AccountInfo`, `ServiceResponse` |
-| Folders | kebab-case | `trade-history/`, `shared/ui/` |
+## 🛠 Integration Note
+ระบบ DashboardGpilot ทำงานแบบ Microservices โดยมี **Backend-Sub** เป็นตัวจัดการ Identity (Auth) และ **Backend-Main** เป็นตัวจัดการ Trading Data ทั้งหมดแชร์ `JWT_SECRET_KEY` และ `MT5_ENCRYPTION_KEY` ร่วมกันเพื่อให้ระบบความปลอดภัยเป็นหนึ่งเดียว

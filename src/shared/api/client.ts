@@ -2,6 +2,9 @@ import { ApiError } from './api-error';
 import { API_GATEWAY_MAIN } from './endpoint';
 import { logger } from '@/shared/utils/logger';
 
+// API Key injection (Global Rule #Security)
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || process.env.NEXT_PUBLIC_INTERNAL_API_KEY || 'Tarzan';
+
 // Configuration for Retry Strategy (Global Rule #3)
 const RETRY_CONFIG = {
   maxAttempts: 3,
@@ -36,11 +39,16 @@ const executeSingleFetch = async <T>(
   try {
     logger.info(`Fetching: ${url}`, { traceId, attempt, method: options.method || 'GET' });
 
+    // ดึง Token จาก Storage (Global Rule #Security)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
         'X-Trace-ID': traceId,
+        'X-API-Key': INTERNAL_API_KEY,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         ...options.headers,
       },
     });
@@ -121,14 +129,42 @@ const performFetchWithRetry = async <T>(
 export const apiClient = async <T>(
   endpoint: string,
   options?: RequestInit,
-  params?: Record<string, string | number | boolean | null | undefined>
+  params?: Record<string, string | number | boolean | null | undefined>,
+  serviceBase?: string
 ): Promise<T> => {
   const traceId = generateTraceId();
   const safeEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-  const finalEndpoint = safeEndpoint.startsWith('/api/gateway')
-    ? safeEndpoint
-    : `${API_GATEWAY_MAIN}${safeEndpoint}`;
+  // เลือกใช้อันที่ส่งมาหรือใช้ค่าพื้นฐาน
+  const base = serviceBase || API_GATEWAY_MAIN;
+  const isSubService = base.includes('/api/gateway/sub');
+
+  // ดึง accountId จาก base (เช่น /api/gateway/gpilot -> gpilot)
+  const getAccountId = (b: string) => {
+    if (b.includes('/api/gateway/')) {
+      const parts = b.split('/api/gateway/');
+      return parts[1] || 'gpilot';
+    }
+    return 'gpilot';
+  };
+
+  const accountId = getAccountId(base);
+
+  /**
+   * สร้าง Final Path
+   * - ถ้าเป็น Sub Service: /api/gateway/sub/api/v1/{endpoint}
+   * - ถ้าเป็น Main Service: /api/gateway/gpilot/api/v1/{accountId}/{endpoint}
+   */
+  let apiPath = '';
+  if (isSubService) {
+    apiPath = `/api/v1${safeEndpoint}`;
+  } else {
+    // สำหรับ Main Backend: /api/v1/{accountId}/{endpoint}
+    apiPath = `/api/v1/${accountId}${safeEndpoint}`;
+  }
+
+  const urlBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const finalEndpoint = `${urlBase}${apiPath}`;
 
   const searchParams = new URLSearchParams();
   if (params) {

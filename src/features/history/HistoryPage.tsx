@@ -4,7 +4,7 @@ import { Box, Typography, Alert } from "@mui/material";
 import { DataTable } from "@/shared/ui";
 import { useHistoryData } from "@/features/history/hooks";
 
-export default function HistoryPage() {
+export default function HistoryPage({ serviceBase }: { serviceBase?: string }) {
   const {
     loading,
     error,
@@ -28,7 +28,7 @@ export default function HistoryPage() {
     typeFilter, setTypeFilter,
     startDate, setStartDate,
     endDate, setEndDate,
-  } = useHistoryData();
+  } = useHistoryData(serviceBase);
 
   return (
     <Box sx={{ p: { xs: 2, lg: 3 }, flex: 1 }}>

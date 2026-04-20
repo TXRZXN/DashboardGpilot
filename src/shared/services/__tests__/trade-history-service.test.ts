@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TradeHistoryService } from '../trade-history-service';
 import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoint';
+import { ENDPOINTS, SUB_ENDPOINTS, API_GATEWAY_SUB } from '@/shared/api/endpoint';
 
 // Mock the apiClient
 vi.mock('@/shared/api/client', () => ({
@@ -19,8 +19,8 @@ describe('TradeHistoryService', () => {
 
     const result = await TradeHistoryService.getHistory();
 
-    // Updated to match the current implementation: apiClient(endpoint, options, params)
-    expect(apiClient).toHaveBeenCalledWith(ENDPOINTS.TRADES, undefined, undefined);
+    // Updated to match the current implementation: apiClient(endpoint, options, params, serviceBase)
+    expect(apiClient).toHaveBeenCalledWith(ENDPOINTS.TRADES, undefined, undefined, undefined);
     expect(result.success).toBe(true);
     expect(result.data).toEqual(mockData);
   });
@@ -32,7 +32,7 @@ describe('TradeHistoryService', () => {
 
     const result = await TradeHistoryService.getHistory(params);
 
-    expect(apiClient).toHaveBeenCalledWith(ENDPOINTS.TRADES, undefined, params);
+    expect(apiClient).toHaveBeenCalledWith(ENDPOINTS.TRADES, undefined, params, undefined);
     expect(result.success).toBe(true);
   });
 
@@ -45,6 +45,38 @@ describe('TradeHistoryService', () => {
     expect(result.error).toEqual({
       code: 'FETCH_ERROR',
       message: 'เกิดข้อผิดพลาดในการดึงข้อมูลประวัติการทำรายการ',
+    });
+  });
+
+  describe('Referral History', () => {
+    it('getReferralHistory_CallsApiClientWithSubGateway', async () => {
+      const mockResult = { success: true, data: { items: [] }, error: null };
+      vi.mocked(apiClient).mockResolvedValue(mockResult);
+
+      const result = await TradeHistoryService.getReferralHistory();
+
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.TRADES,
+        undefined,
+        undefined,
+        API_GATEWAY_SUB
+      );
+      expect(result.success).toBe(true);
+    });
+
+    it('syncReferralTrades_CallsApiClientWithPostAndSubGateway', async () => {
+      const mockResult = { success: true, data: { status: 'syncing' }, error: null };
+      vi.mocked(apiClient).mockResolvedValue(mockResult);
+
+      const result = await TradeHistoryService.syncReferralTrades();
+
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.TRADES_SYNC_REFERRALS,
+        expect.objectContaining({ method: 'POST' }),
+        undefined,
+        API_GATEWAY_SUB
+      );
+      expect(result.success).toBe(true);
     });
   });
 });

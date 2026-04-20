@@ -5,16 +5,16 @@ import { AnalyticsService } from "@/shared/services/analytics-service";
 import { TradeHistoryService } from "@/shared/services/trade-history-service";
 import { HealthService } from "@/shared/services/health-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
-import type { ProductDetailSummary } from "@/shared/types/api";
+import type { ProductDetail } from "@/shared/types/api";
 
 /**
  * useProductDetailData
- * ดึง Product Detail Summary และ Health Check ขนานกัน
+ * ดึง Product Detail และ Health Check ขนานกัน
  * หมายเหตุ: getHistory() ถูกเรียกเพื่อกระตุ้น Background Sync ใน Backend เท่านั้น ไม่ได้นำข้อมูลมาแสดงผล
  */
-export function useProductDetailData() {
+export function useProductDetailData(serviceBase?: string) {
   const { isHealthy } = useApiHealth();
-  const [summary, setSummary] = useState<ProductDetailSummary | null>(null);
+  const [summary, setSummary] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,19 +25,16 @@ export function useProductDetailData() {
       setError(null);
 
       const [dashResponse, healthResponse] = await Promise.all([
-        AnalyticsService.getProductDetailSummary(),
-        HealthService.checkHealth(),
+        AnalyticsService.getProductDetail(undefined, serviceBase),
+        HealthService.checkHealth(serviceBase),
       ]);
-
-      // ยิงทิ้งเพื่อ updated db เฉยๆ (Background Sync) - ทำงานเบื้องหลัง ไม่รอ
-      TradeHistoryService.getHistory().catch(() => null);
 
       if (healthResponse.success && healthResponse.data?.status === "ok") {
         if (dashResponse.success && dashResponse.data) {
           setSummary(dashResponse.data);
         } else if (!dashResponse.success) {
           setError(
-            dashResponse.error?.message ?? "Failed to fetch product detail summary",
+            dashResponse.error?.message ?? "Failed to fetch product detail",
           );
         }
       } else {
@@ -52,7 +49,7 @@ export function useProductDetailData() {
     } finally {
       setLoading(false);
     }
-  }, [isHealthy]);
+  }, [isHealthy, serviceBase]);
 
   useEffect(() => {
     fetchSummary();
@@ -84,21 +81,21 @@ export function useProductDetailData() {
     account: { balance: summary?.balance ?? 0 },
     equityData,
     symbolStats: summary?.symbolStats?.list ?? [],
-    recent: summary?.recent ?? [],
+    recent: [], // Backend no longer returns recent transactions in this model
     volumeStats: {
       tradeCount: summary?.symbolStats?.totaltrades ?? 0,
     },
     // Performance Metrics from summary
     performance: {
-      winRate: summary?.winRate ?? 0,
+      winRate: summary?.winrate ?? 0,
       recoveryFactor: summary?.recoveryFactor ?? 0,
-      maxDrawdown: summary?.maxDrawdownPct ?? 0,
+      maxDrawdown: summary?.maxdd ?? 0,
       profitFactor: summary?.profitFactor ?? 0,
-      sharpeRatio: summary?.sharpeRatio ?? 0,
+      sharpeRatio: 0, // Not explicitly in the new ProductDetail
     },
     profitToday: summary?.profitToday ?? 0,
-    profitWeek: summary?.profitWeek ?? 0,
-    profitMonth: summary?.profitMonth ?? 0,
+    profitWeek: summary?.avgProfitWeek ?? 0,
+    profitMonth: summary?.avgProfitMonth ?? 0,
     formatCurrency,
     refreshData: fetchSummary,
   };

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthService } from '../auth-service';
 import { apiClient } from '@/shared/api/client';
 import { CryptoUtils } from '@/shared/utils/crypto';
-import { SUB_ENDPOINTS } from '@/shared/api/endpoint';
+import { SUB_ENDPOINTS, API_GATEWAY_SUB } from '@/shared/api/endpoint';
 
 // Mock values
 const MOCK_ENCRYPTION_KEY = '00'.repeat(32);
@@ -48,7 +48,12 @@ describe('AuthService', () => {
       const result = await AuthService.register(data);
 
       expect(CryptoUtils.encrypt).toHaveBeenCalledWith('mt5-pass-123', MOCK_ENCRYPTION_KEY);
-      expect(apiClient).toHaveBeenCalled();
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.AUTH_REGISTER,
+        expect.objectContaining({ method: 'POST' }),
+        undefined,
+        API_GATEWAY_SUB
+      );
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockResult);
     });
@@ -84,7 +89,9 @@ describe('AuthService', () => {
           headers: expect.objectContaining({
             'Content-Type': 'application/x-www-form-urlencoded',
           }),
-        })
+        }),
+        undefined,
+        API_GATEWAY_SUB
       );
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockLoginResponse);
@@ -98,6 +105,12 @@ describe('AuthService', () => {
       const result = await AuthService.updateMT5Password('new-pass');
 
       expect(CryptoUtils.encrypt).toHaveBeenCalledWith('new-pass', MOCK_ENCRYPTION_KEY);
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.AUTH_UPDATE_MT5_PASSWORD,
+        expect.anything(),
+        undefined,
+        API_GATEWAY_SUB
+      );
       expect(result.success).toBe(true);
     });
   });

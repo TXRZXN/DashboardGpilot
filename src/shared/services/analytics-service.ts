@@ -1,8 +1,9 @@
 import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
-import { ENDPOINTS } from '@/shared/api/endpoint';
+import { ENDPOINTS, SERVICE_BASE_GPILOT } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
-import type { ServiceResponse, ProductDetailSummary, TradeRequest, GroupedTradesResponse } from '@/shared/types/api';
+import type { ServiceResponse, ProductDetail, DashboardSummary, TradeRequest, GroupedTradesResponse } from '@/shared/types/api';
+import { MOCK_PRODUCT_DETAIL } from '../mock/dashboard-mock';
 
 const logger = createLogger('AnalyticsService');
 
@@ -17,9 +18,15 @@ export const AnalyticsService = {
    * ดึง Trade History ที่ grouped by position (round-turn)
    */
 
-  getGroupedTrades: async (params?: TradeRequest): Promise<ServiceResponse<GroupedTradesResponse>> => {
+  getGroupedTrades: async (params?: TradeRequest, serviceBase?: string): Promise<ServiceResponse<GroupedTradesResponse>> => {
     try {
-      logger.info('Fetching grouped trades', { params });
+      logger.info('Fetching grouped trades', { params, serviceBase });
+
+      // Mock logic for non-Gpilot services
+      if (serviceBase && serviceBase !== SERVICE_BASE_GPILOT) {
+        // Return minimal mock for trades if needed, or handle accordingly
+        return { success: true, data: null, error: null }; 
+      }
 
       // Map parameters to Backend-Main aliases (v3)
       const mappedParams: Record<string, any> = { ...params };
@@ -36,6 +43,7 @@ export const AnalyticsService = {
         ENDPOINTS.TRADES_GROUPED,
         undefined,
         finalParams,
+        serviceBase
       );
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง grouped trades';
@@ -45,19 +53,52 @@ export const AnalyticsService = {
   },
 
   /**
-   * ดึง Dashboard Summary
+   * ดึง Dashboard Summary อ้างอิงตารางจาก /dashboard
    */
-  getProductDetailSummary: async (params?: TradeRequest): Promise<ServiceResponse<ProductDetailSummary>> => {
+  getDashboardSummary: async (serviceBase?: string): Promise<ServiceResponse<DashboardSummary>> => {
     try {
-      logger.info('Fetching product detail summary', { params });
-      return await apiClient<ServiceResponse<ProductDetailSummary>>(
-        ENDPOINTS.PRODUCT_DETAIL_SUMMARY,
+      logger.info('Fetching dashboard summary', { serviceBase });
+
+      if (serviceBase && serviceBase !== SERVICE_BASE_GPILOT) {
+        return { success: true, data: { DD: 0, avgProfitMonth: 0 }, error: null };
+      }
+
+      return await apiClient<ServiceResponse<DashboardSummary>>(
+        ENDPOINTS.DASHBOARD_SUMMARY,
         undefined,
-        params as any,
+        undefined,
+        serviceBase
       );
     } catch (e: unknown) {
-      const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง product detail summary';
-      logger.error('Failed to fetch product detail summary', e instanceof Error ? e : String(e));
+      const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง dashboard summary';
+      logger.error('Failed to fetch dashboard summary', e instanceof Error ? e : String(e));
+      return { success: false, data: null, error: { code: 'FETCH_ERROR', message: errorMsg } };
+    }
+  },
+
+  /**
+   * ดึง Product Detail
+   */
+  getProductDetail: async (params?: TradeRequest, serviceBase?: string): Promise<ServiceResponse<ProductDetail>> => {
+    try {
+      logger.info('Fetching product detail', { params, serviceBase });
+
+      // Mock สำหรับ Microservice อื่นๆ ที่ยังไม่มี API
+      if (serviceBase && serviceBase !== SERVICE_BASE_GPILOT) {
+        // จำลอง delay เล็กน้อยให้เหมือนยิง API จริง
+        await new Promise(resolve => setTimeout(resolve, 800));
+        return { success: true, data: MOCK_PRODUCT_DETAIL, error: null };
+      }
+
+      return await apiClient<ServiceResponse<ProductDetail>>(
+        ENDPOINTS.PRODUCT_DETAIL,
+        undefined,
+        params as any,
+        serviceBase
+      );
+    } catch (e: unknown) {
+      const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึง product detail';
+      logger.error('Failed to fetch product detail', e instanceof Error ? e : String(e));
       return { success: false, data: null, error: { code: 'FETCH_ERROR', message: errorMsg } };
     }
   },

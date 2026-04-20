@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/api/client';
-import { SUB_ENDPOINTS } from '@/shared/api/endpoint';
+import { SUB_ENDPOINTS, API_GATEWAY_SUB } from '@/shared/api/endpoint';
 import { CryptoUtils } from '@/shared/utils/crypto';
 import { createLogger } from '@/shared/utils/logger';
 import { ApiError } from '@/shared/api/api-error';
@@ -54,7 +54,7 @@ export const AuthService = {
       const result = await apiClient<RegistrationResponse>(SUB_ENDPOINTS.AUTH_REGISTER, {
         method: 'POST',
         body: JSON.stringify(requestData),
-      });
+      }, undefined, API_GATEWAY_SUB);
 
       logger.info('User registered successfully', { email: data.email });
       return {
@@ -93,7 +93,7 @@ export const AuthService = {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: formData.toString(),
-      });
+      }, undefined, API_GATEWAY_SUB);
 
       logger.info('Login successful', { username: data.username });
       return {
@@ -123,7 +123,7 @@ export const AuthService = {
       await apiClient(SUB_ENDPOINTS.AUTH_UPDATE_PASSWORD, {
         method: 'PATCH',
         body: JSON.stringify({ new_password: newPassword }),
-      });
+      }, undefined, API_GATEWAY_SUB);
       return { success: true, data: undefined, error: null };
     } catch (error) {
       const errorMsg = error instanceof ApiError ? error.message : 'ไม่สามารถเปลี่ยนรหัสผ่านได้';
@@ -155,7 +155,7 @@ export const AuthService = {
       await apiClient(SUB_ENDPOINTS.AUTH_UPDATE_MT5_PASSWORD, {
         method: 'PATCH',
         body: JSON.stringify({ encrypted_password: encryptedPassword }),
-      });
+      }, undefined, API_GATEWAY_SUB);
       return { success: true, data: undefined, error: null };
     } catch (error) {
       const errorMsg = error instanceof ApiError ? error.message : 'ไม่สามารถเปลี่ยนรหัสผ่าน MT5 ได้';

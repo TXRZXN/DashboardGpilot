@@ -109,29 +109,25 @@ export interface ProductDetailRecentTransaction {
   readonly symbol?: string | null;
 }
 
-export interface ProductDetailSummary {
+export interface DashboardSummary {
+  readonly DD: number;
+  readonly avgProfitMonth: number;
+}
+
+export interface ProductDetail {
   readonly balance: number;
   readonly profitToday: number;
-  readonly profitWeek: number;
-  readonly profitMonth: number;
-
-  // Performance Metrics (Integrated from Analytics)
-  readonly winRate: number;
-  readonly riskRewardRatio: number;
-  readonly avgWin: number;
-  readonly avgLoss: number;
-  readonly profitFactor: number;
-  readonly sharpeRatio: number;
-  readonly maxDrawdownPct: number;
-  readonly maxDrawdownAmount: number;
+  readonly avgProfitWeek: number;
+  readonly avgProfitMonth: number;
+  readonly winrate: number;
   readonly recoveryFactor: number;
-
+  readonly maxdd: number;
+  readonly profitFactor: number;
   readonly equityCurve: readonly EquityPoint[];
   readonly symbolStats: {
-    readonly totaltrades: number; // Match actual backend JSON response (lowercase)
+    readonly totaltrades: number;
     readonly list: readonly SymbolStat[];
   };
-  readonly recent: readonly ProductDetailRecentTransaction[];
 }
 
 

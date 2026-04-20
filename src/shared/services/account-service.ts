@@ -13,13 +13,12 @@ export const AccountService = {
   /**
    * ดึงข้อมูลบัญชีล่าสุด
    */
-  getAccountInfo: async (): Promise<ServiceResponse<AccountInfo>> => {
+  getAccountInfo: async (serviceBase?: string): Promise<ServiceResponse<AccountInfo>> => {
     try {
-      logger.info('Fetching account info');
+      logger.info('Fetching account info', { serviceBase });
       
       // apiClient คืนค่าส่วนที่ Backend ส่งมา (ซึ่งควรเป็น ServiceResponse ตามมาตรฐาน API Contract)
-      const response = await apiClient<ServiceResponse<AccountInfo>>(ENDPOINTS.ACCOUNT);
-      
+      const response = await apiClient<ServiceResponse<AccountInfo>>(ENDPOINTS.ACCOUNT, undefined, undefined, serviceBase);
       
       return response;
     } catch (e: unknown) {
@@ -37,10 +36,10 @@ export const AccountService = {
   /**
    * ดึงข้อมูลสรุปสำหรับการเงิน (Lightweight Account Summary)
    */
-  getAccountSummary: async (): Promise<ServiceResponse<AccountSummary>> => {
+  getAccountSummary: async (serviceBase?: string): Promise<ServiceResponse<AccountSummary>> => {
     try {
-      logger.info('Fetching account summary');
-      const response = await apiClient<ServiceResponse<AccountSummary>>(ENDPOINTS.ACCOUNT_SUMMARY);
+      logger.info('Fetching account summary', { serviceBase });
+      const response = await apiClient<ServiceResponse<AccountSummary>>(ENDPOINTS.ACCOUNT_SUMMARY, undefined, undefined, serviceBase);
       return response;
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึงข้อมูลสรุปบัญชี';

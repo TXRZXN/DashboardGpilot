@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
-import { ENDPOINTS, SUB_ENDPOINTS } from '@/shared/api/endpoint';
+import { ENDPOINTS, SUB_ENDPOINTS, API_GATEWAY_SUB } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
 import type { ServiceResponse, TradeRequest, Deal, ReferralSyncSummary, ReferralSyncRequest } from '@/shared/types/api';
 
@@ -14,9 +14,9 @@ export const TradeHistoryService = {
   /**
    * ดึงประวัติการเทรดแบบเรียลไทม์จาก Backend-Main
    */
-  getHistory: async (params?: TradeRequest): Promise<ServiceResponse<Deal[]>> => {
+  getHistory: async (params?: TradeRequest, serviceBase?: string): Promise<ServiceResponse<Deal[]>> => {
     try {
-      logger.info('Fetching trade history', { params });
+      logger.info('Fetching trade history', { params, serviceBase });
       
       // Filter only supported params for /trades (Backend-Main)
       const filteredParams: Record<string, any> = {};
@@ -36,7 +36,8 @@ export const TradeHistoryService = {
       const response = await apiClient<ServiceResponse<any>>(
         ENDPOINTS.TRADES, 
         undefined, 
-        finalParams
+        finalParams,
+        serviceBase
       );
       
       let normalizedDeals: Deal[] = [];
@@ -73,39 +74,16 @@ export const TradeHistoryService = {
    */
   getReferralHistory: async (params?: ReferralSyncRequest): Promise<ServiceResponse<ReferralSyncSummary>> => {
     try {
-      logger.info('Fetching referral synced trades (Mock Mode)', { params });
+      logger.info('Fetching referral synced trades from Backend-Sub', { params });
       
-      // Simulating network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Generate dynamic mock data based on dates
-      const data = { ...MOCK_REFERRAL_DATA };
-      
-      // If a specific date is requested, we shift the data slightly for demonstration
-      if (params?.from_date) {
-        const dateHash = params.from_date.split('-').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const multiplier = (dateHash % 5) + 1; // 1-5
-        
-        return {
-          success: true,
-          data: {
-            ...data,
-            totalThisWeek: data.totalThisWeek * multiplier,
-            trades: data.trades.map((t, idx) => ({
-              ...t,
-              amount: t.amount * multiplier,
-              date: new Date(new Date(params.from_date!).getTime() + (idx * 86400000)).toISOString()
-            }))
-          },
-          error: null
-        };
-      }
+      const response = await apiClient<ServiceResponse<ReferralSyncSummary>>(
+        SUB_ENDPOINTS.TRADES,
+        undefined,
+        params as any,
+        API_GATEWAY_SUB
+      );
 
-      return {
-        success: true,
-        data,
-        error: null
-      };
+      return response;
     } catch (e) {
       logger.error('Failed to fetch referral history', e instanceof Error ? e : String(e));
       return {
@@ -121,16 +99,16 @@ export const TradeHistoryService = {
    */
   syncReferralTrades: async (): Promise<ServiceResponse<ReferralSyncSummary>> => {
     try {
-      logger.info('Manually triggering referral sync (Mock Mode)');
+      logger.info('Manually triggering referral sync via Backend-Sub');
       
-      // Simulating sync processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      return {
-        success: true,
-        data: MOCK_REFERRAL_DATA,
-        error: null
-      };
+      const response = await apiClient<ServiceResponse<ReferralSyncSummary>>(
+        SUB_ENDPOINTS.TRADES_SYNC_REFERRALS,
+        { method: 'POST' },
+        undefined,
+        API_GATEWAY_SUB
+      );
+
+      return response;
     } catch (e) {
       logger.error('Failed to sync referrals', e instanceof Error ? e : String(e));
       return {

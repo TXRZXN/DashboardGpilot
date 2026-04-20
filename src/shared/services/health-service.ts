@@ -13,21 +13,21 @@ export const HealthService = {
   /**
    * ตรวจสอบสถานะเชื่อมต่อ
    */
-  checkHealth: async (): Promise<HealthResponse> => {
+  checkHealth: async (serviceBase?: string): Promise<HealthResponse> => {
     try {
-      logger.debug('Checking API health');
-      const response = await apiClient<HealthResponse>(ENDPOINTS.HEALTH);
+      logger.debug('Checking API health', { serviceBase });
+      const response = await apiClient<HealthResponse>(ENDPOINTS.HEALTH, undefined, undefined, serviceBase);
       
       if (response.success) {
-        logger.debug('API health check passed', { status: response.data.status });
+        logger.debug('API health check passed', { status: response.data.status, serviceBase });
       } else {
-        logger.warn('API health check returned unsuccessful status', { error: response.error });
+        logger.warn('API health check returned unsuccessful status', { error: response.error, serviceBase });
       }
       
       return response;
     } catch (e: unknown) {
       const errorMsg = e instanceof ApiError ? e.message : 'Cannot connect to API Server';
-      logger.error('API health check failed', e instanceof Error ? e : String(e));
+      logger.error('API health check failed', { error: e instanceof Error ? e : String(e), serviceBase });
       
       return {
         success: false,

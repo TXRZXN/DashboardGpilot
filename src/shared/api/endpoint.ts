@@ -1,7 +1,16 @@
 /**
+ * Base Paths สำหรับ Microservices (Microservice Architecture)
+ */
+export const SERVICE_BASE_GPILOT = "/api/gateway/gpilot";
+export const SERVICE_BASE_SAFEGROW = "/api/gateway/safegrow";
+export const SERVICE_BASE_BANGRANJAN = "/api/gateway/bangranjan";
+export const SERVICE_BASE_PPVP = "/api/gateway/ppvp";
+export const SERVICE_BASE_GOLDENBOY = "/api/gateway/goldenboy";
+
+/**
  * กำหนด Base Paths สำหรับ API Gateway
  */
-export const API_GATEWAY_MAIN = "/api/gateway/main";
+export const API_GATEWAY_MAIN = SERVICE_BASE_GPILOT;
 export const API_GATEWAY_SUB = "/api/gateway/sub";
 
 /**
@@ -9,20 +18,19 @@ export const API_GATEWAY_SUB = "/api/gateway/sub";
  */
 export const MAIN_ENDPOINTS = {
   /** เช็คสถานะ API และการเชื่อมต่อ MT5 */
-  HEALTH: `${API_GATEWAY_MAIN}/api/v1/health`,
+  HEALTH: `/health`,
   /** ดึงประวัติการเทรด raw (รองรับ Filtering) */
-  TRADES: `${API_GATEWAY_MAIN}/api/v1/trades`,
+  TRADES: `/trades`,
   /** ดึงประวัติการเทรด grouped by position (round-turn) */
-  TRADES_GROUPED: `${API_GATEWAY_MAIN}/api/v1/trades/grouped`,
+  TRADES_GROUPED: `/history`,
   /** ดึงข้อมูลบัญชี MT5 */
-  ACCOUNT: `${API_GATEWAY_MAIN}/api/v1/account`,
+  ACCOUNT: `/account`,
   /** ดึง Dashboard Summary (today/week/month profit, symbol stats) */
-  PRODUCT_DETAIL_SUMMARY: `${API_GATEWAY_MAIN}/api/v1/dashboard/summary`,
+  DASHBOARD_SUMMARY: `/dashboard`,
   /** สรุปข้อมูลสำหรับหน้า Account (Balance, Profit, Deposits, Withdrawals) - Optimized */
-  ACCOUNT_SUMMARY: `${API_GATEWAY_MAIN}/api/v1/dashboard/account`,
-
-  /** ดึง Cashflow Summary (transactions, balance chart) */
-  CASHFLOW_SUMMARY: `${API_GATEWAY_MAIN}/api/v1/cashflow/summary`,
+  ACCOUNT_SUMMARY: `/dashboard/account`,
+  /** ข้อมูลเจาะจงของแต่ละสัญลักษณ์สำหรับหน้า Detail */
+  PRODUCT_DETAIL: `/product/detail`,
 } as const;
 
 /**
@@ -30,19 +38,19 @@ export const MAIN_ENDPOINTS = {
  */
 export const SUB_ENDPOINTS = {
   /** เช็คสถานะ API และ Database */
-  HEALTH: `${API_GATEWAY_SUB}/api/v1/health`,
+  HEALTH: `/health`,
   /** ลงทะเบียนผู้ใช้ใหม่ */
-  AUTH_REGISTER: `${API_GATEWAY_SUB}/api/v1/auth/register`,
+  AUTH_REGISTER: `/auth/register`,
   /** เข้าสู่ระบบ */
-  AUTH_LOGIN: `${API_GATEWAY_SUB}/api/v1/auth/login`,
+  AUTH_LOGIN: `/auth/login`,
   /** เปลี่ยนรหัสผ่านเว็บ */
-  AUTH_UPDATE_PASSWORD: `${API_GATEWAY_SUB}/api/v1/auth/password`,
+  AUTH_UPDATE_PASSWORD: `/auth/password`,
   /** เปลี่ยนรหัสผ่าน MT5 */
-  AUTH_UPDATE_MT5_PASSWORD: `${API_GATEWAY_SUB}/api/v1/auth/mt5-password`,
+  AUTH_UPDATE_MT5_PASSWORD: `/auth/mt5-password`,
   /** ดึงข้อมูลเทรดที่ Sync แล้ว */
-  TRADES: `${API_GATEWAY_SUB}/api/v1/trades`,
+  TRADES: `/trades`,
   /** สั่ง Sync ข้อมูลการเทรด Referral (Manual) */
-  TRADES_SYNC_REFERRALS: `${API_GATEWAY_SUB}/api/v1/trades/sync/referrals`,
+  TRADES_SYNC_REFERRALS: `/trades/sync/referrals`,
 } as const;
 
 /**
