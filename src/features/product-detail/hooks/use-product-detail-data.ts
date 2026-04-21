@@ -1,59 +1,48 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AnalyticsService } from "@/shared/services/analytics-service";
-import { TradeHistoryService } from "@/shared/services/trade-history-service";
 import { HealthService } from "@/shared/services/health-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
 import type { ProductDetail } from "@/shared/types/api";
 
 /**
  * useProductDetailData
- * ดึง Product Detail และ Health Check ขนานกัน
- * หมายเหตุ: getHistory() ถูกเรียกเพื่อกระตุ้น Background Sync ใน Backend เท่านั้น ไม่ได้นำข้อมูลมาแสดงผล
+ * ดึง Product Detail โดยใช้ TanStack Query เพื่อรองรับ Caching และ Revalidation
  */
 export function useProductDetailData(serviceBase?: string) {
   const { isHealthy } = useApiHealth();
-  const [summary, setSummary] = useState<ProductDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchSummary = useCallback(async () => {
-    if (!isHealthy) return;
-    try {
-      setLoading(true);
-      setError(null);
-
+  const { 
+    data: summary, 
+    isLoading: loading, 
+    error: queryError,
+    refetch: refreshData,
+  } = useQuery({
+    queryKey: ["product-detail", serviceBase],
+    queryFn: async () => {
       const [dashResponse, healthResponse] = await Promise.all([
         AnalyticsService.getProductDetail(undefined, serviceBase),
         HealthService.checkHealth(serviceBase),
       ]);
 
-      if (healthResponse.success && healthResponse.data?.status === "ok") {
-        if (dashResponse.success && dashResponse.data) {
-          setSummary(dashResponse.data);
-        } else if (!dashResponse.success) {
-          setError(
-            dashResponse.error?.message ?? "Failed to fetch product detail",
-          );
-        }
-      } else {
-        setError(
-          healthResponse.error ||
-            "System health check failed. Cannot load product detail data.",
-        );
-        setSummary(null);
+      if (!healthResponse.success || healthResponse.data?.status !== "ok") {
+        throw new Error(healthResponse.error || "System health check failed");
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error");
-    } finally {
-      setLoading(false);
-    }
-  }, [isHealthy, serviceBase]);
 
-  useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
+      if (!dashResponse.success || !dashResponse.data) {
+        throw new Error(dashResponse.error?.message ?? "Failed to fetch product detail");
+      }
+
+      return dashResponse.data;
+    },
+    enabled: isHealthy,
+    // SCALE OPTIMIZATION: Keep data fresh for 1 minute
+    staleTime: 60 * 1000,
+  });
+
+  const error = queryError instanceof Error ? queryError.message : null;
 
   // Format equity curve สำหรับ chart
   const equityData = useMemo(() => {
@@ -81,24 +70,21 @@ export function useProductDetailData(serviceBase?: string) {
     account: { balance: summary?.balance ?? 0 },
     equityData,
     symbolStats: summary?.symbolStats?.list ?? [],
-    recent: [], // Backend no longer returns recent transactions in this model
+    recent: [], 
     volumeStats: {
       tradeCount: summary?.symbolStats?.totaltrades ?? 0,
     },
-    // Performance Metrics from summary
     performance: {
       winRate: summary?.winrate ?? 0,
       recoveryFactor: summary?.recoveryFactor ?? 0,
       maxDrawdown: summary?.maxdd ?? 0,
       profitFactor: summary?.profitFactor ?? 0,
-      sharpeRatio: 0, // Not explicitly in the new ProductDetail
+      sharpeRatio: 0, 
     },
     profitToday: summary?.profitToday ?? 0,
     profitWeek: summary?.avgProfitWeek ?? 0,
     profitMonth: summary?.avgProfitMonth ?? 0,
     formatCurrency,
-    refreshData: fetchSummary,
+    refreshData,
   };
 }
-
-

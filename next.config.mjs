@@ -10,11 +10,11 @@ const nextConfig = {
     return [
       {
         source: '/api/gateway/sub/:path*',
-        destination: 'http://localhost:8001/api/gateway/sub/:path*',
+        destination: 'http://localhost:8001/:path*',
       },
       {
-        source: '/api/gateway/gpilot/:path*',
-        destination: 'http://localhost:8000/api/gateway/gpilot/:path*',
+        source: '/api/gateway/:account/:path*',
+        destination: 'http://localhost:8000/:path*',
       },
     ];
   },

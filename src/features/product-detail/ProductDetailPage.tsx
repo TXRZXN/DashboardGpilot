@@ -77,17 +77,17 @@ function ProductDetailContent() {
             iconColor: "#10B981",
         },
         {
-            title: "Profit WEEK",
+            title: "AVG Profit WEEK",
             value: formatCurrency(profitWeek),
-            change: "Weekly (From Mon)",
+            change: "Weekly average",
             changeType: profitWeek >= 0 ? ("positive" as const) : ("negative" as const),
             icon: AttachMoneyIcon,
             iconColor: "#10B981",
         },
         {
-            title: "Profit MONTH",
+            title: "AVG Profit MONTH",
             value: formatCurrency(profitMonth),
-            change: "Monthly performance",
+            change: "Monthly average",
             changeType: profitMonth >= 0 ? ("positive" as const) : ("negative" as const),
             icon: PercentIcon,
             iconColor: "#22D3EE",
@@ -193,57 +193,63 @@ function ProductDetailContent() {
             </Box>
 
             {/* Tab Panel: Overview */}
-            {activeTab === 0 && (
-                <Box role="tabpanel" id="tabpanel-overview" aria-labelledby="tab-overview">
-                    {error && (
-                        <Alert severity="error" sx={{ mb: 3 }}>
-                            {error}
-                        </Alert>
-                    )}
+            <Box 
+                role="tabpanel" 
+                id="tabpanel-overview" 
+                aria-labelledby="tab-overview"
+                sx={{ display: activeTab === 0 ? 'block' : 'none' }}
+            >
+                {error && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        {error}
+                    </Alert>
+                )}
 
-                    <Grid container spacing={{ xs: 1.5, lg: 2 }} sx={{ mb: { xs: 2, lg: 3 } }}>
-                        {metrics.map((metric) => (
-                            <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={metric.title}>
-                                {loading ? (
-                                    <Skeleton
-                                        variant="rectangular"
-                                        height={115}
-                                        sx={{ borderRadius: 3, bgcolor: "rgba(255,255,255,0.03)" }}
-                                    />
-                                ) : (
-                                    <MetricCard
-                                        title={metric.title}
-                                        value={metric.value}
-                                        change={metric.change}
-                                        changeType={metric.changeType}
-                                        icon={metric.icon}
-                                        iconColor={metric.iconColor}
-                                    />
-                                )}
-                            </Grid>
-                        ))}
-                    </Grid>
+                <Grid container spacing={{ xs: 1.5, lg: 2 }} sx={{ mb: { xs: 2, lg: 3 } }}>
+                    {metrics.map((metric) => (
+                        <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={metric.title}>
+                            {loading ? (
+                                <Skeleton
+                                    variant="rectangular"
+                                    height={115}
+                                    sx={{ borderRadius: 3, bgcolor: "rgba(255,255,255,0.03)" }}
+                                />
+                            ) : (
+                                <MetricCard
+                                    title={metric.title}
+                                    value={metric.value}
+                                    change={metric.change}
+                                    changeType={metric.changeType}
+                                    icon={metric.icon}
+                                    iconColor={metric.iconColor}
+                                />
+                            )}
+                        </Grid>
+                    ))}
+                </Grid>
 
-                    <Stack spacing={2}>
-                        <RiskMetrics
-                            loading={loading}
-                            winRate={performance.winRate}
-                            recoveryFactor={performance.recoveryFactor}
-                            maxDrawdown={performance.maxDrawdown}
-                            profitFactor={performance.profitFactor}
-                        />
-                        <EquityChart loading={loading} data={equityData} title="Account Growth" />
-                        <SymbolPerformance loading={loading} stats={symbolStats} totalTrades={volumeStats.tradeCount} />
-                    </Stack>
-                </Box>
-            )}
+                <Stack spacing={2}>
+                    <RiskMetrics
+                        loading={loading}
+                        winRate={performance.winRate}
+                        recoveryFactor={performance.recoveryFactor}
+                        maxDrawdown={performance.maxDrawdown}
+                        profitFactor={performance.profitFactor}
+                    />
+                    <EquityChart loading={loading} data={equityData} title="Account Growth" />
+                    <SymbolPerformance loading={loading} stats={symbolStats} totalTrades={volumeStats.tradeCount} />
+                </Stack>
+            </Box>
 
             {/* Tab Panel: Trade History */}
-            {activeTab === 1 && (
-                <Box role="tabpanel" id="tabpanel-history" aria-labelledby="tab-history">
-                    <HistoryTab serviceBase={serviceBase || undefined} />
-                </Box>
-            )}
+            <Box 
+                role="tabpanel" 
+                id="tabpanel-history" 
+                aria-labelledby="tab-history"
+                sx={{ display: activeTab === 1 ? 'block' : 'none' }}
+            >
+                <HistoryTab serviceBase={serviceBase || undefined} />
+            </Box>
         </Box>
     );
 }

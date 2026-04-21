@@ -2,6 +2,7 @@ import { Inter, Manrope } from "next/font/google";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { ThemeProvider } from "@/shared/ui/theme-provider";
 import { ApiHealthProvider } from "@/shared/providers/api-health-provider";
+import { QueryProvider } from "@/shared/providers/QueryProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -31,9 +32,11 @@ export default function RootLayout({
       <body className={`${inter.variable} ${manrope.variable} antialiased`}>
         <AppRouterCacheProvider>
           <ThemeProvider>
-            <ApiHealthProvider>
-              {children}
-            </ApiHealthProvider>
+            <QueryProvider>
+              <ApiHealthProvider>
+                {children}
+              </ApiHealthProvider>
+            </QueryProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

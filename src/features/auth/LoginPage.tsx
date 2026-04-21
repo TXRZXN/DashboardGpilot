@@ -30,7 +30,8 @@ export function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock successful login
+    // Development Mock Login
+    localStorage.setItem('auth_token', 'dev-mock-token');
     router.push("/dashboard");
   };
 

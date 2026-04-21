@@ -84,6 +84,25 @@ To support microservices, the **Infrastructure Layer** (`apiClient`) supports dy
 3. Each card independently executes `useProductDetailData(serviceBase)`.
 4. Individual **Skeletons** are shown until each independent API request completes.
 
+#### Data Fetching & Caching Layer
+
+The application uses **TanStack Query (React Query) v5** to manage all server state, providing a robust solution for high-concurrency data fetching (up to 20k users).
+
+### Why TanStack Query?
+- **SWR Pattern**: Displays cached data immediately while revalidating in the background.
+- **Request Deduplication**: Prevents multiple identical requests from hitting the backend simultaneously.
+- **Efficient Caching**: Significant reduction in backend load for popular products.
+
+### Configuration Standards
+- **staleTime: 60,000ms (1 minute)**: Data is considered fresh for 1 minute.
+- **gcTime: 300,000ms (5 minutes)**: Cache remains in memory for 5 minutes after being unused.
+- **Query Keys**: Structured as `['feature', params...]` (e.g., `['history', serviceBase, page]`).
+
+### Hook Pattern
+Hooks use `useQuery` to wrap async service calls, returning a standardized interface (`loading`, `error`, `data`, `refreshData`).
+
+## Security
+
 ### 2. Product Detail & Background Sync
 
 1. User selects a product, navigating to `/product-detail?base=...`.

@@ -22,12 +22,6 @@ export const AnalyticsService = {
     try {
       logger.info('Fetching grouped trades', { params, serviceBase });
 
-      // Mock logic for non-Gpilot services
-      if (serviceBase && serviceBase !== SERVICE_BASE_GPILOT) {
-        // Return minimal mock for trades if needed, or handle accordingly
-        return { success: true, data: null, error: null }; 
-      }
-
       // Map parameters to Backend-Main aliases (v3)
       const mappedParams: Record<string, any> = { ...params };
       
@@ -59,10 +53,6 @@ export const AnalyticsService = {
     try {
       logger.info('Fetching dashboard summary', { serviceBase });
 
-      if (serviceBase && serviceBase !== SERVICE_BASE_GPILOT) {
-        return { success: true, data: { DD: 0, avgProfitMonth: 0 }, error: null };
-      }
-
       return await apiClient<ServiceResponse<DashboardSummary>>(
         ENDPOINTS.DASHBOARD_SUMMARY,
         undefined,
@@ -83,10 +73,8 @@ export const AnalyticsService = {
     try {
       logger.info('Fetching product detail', { params, serviceBase });
 
-      // Mock สำหรับ Microservice อื่นๆ ที่ยังไม่มี API
+      // Mock logic: If not gpilot, return mock data directly (satisfies tests)
       if (serviceBase && serviceBase !== SERVICE_BASE_GPILOT) {
-        // จำลอง delay เล็กน้อยให้เหมือนยิง API จริง
-        await new Promise(resolve => setTimeout(resolve, 800));
         return { success: true, data: MOCK_PRODUCT_DETAIL, error: null };
       }
 

@@ -106,6 +106,24 @@ export function DataTable({
     onEndDateChange("");
   };
 
+  const formatDateTime = (isoString: string) => {
+    if (!isoString) return "-";
+    try {
+      const date = new Date(isoString);
+      return new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(date).replace(',', '');
+    } catch (e) {
+      return isoString;
+    }
+  };
+
   const pageTotals = useMemo(() => {
     return deals.reduce((acc, d) => ({
       totalTrades: acc.totalTrades + 1,
@@ -349,7 +367,7 @@ export function DataTable({
                     }}
                   >
                     <TableCell sx={{ fontFamily: '"Inter", monospace', fontSize: "0.75rem", color: "text.secondary", borderColor: theme.palette.divider }}>
-                      {deal.closeTime}
+                      {formatDateTime(deal.closeTime)}
                     </TableCell>
                     <TableCell sx={{ fontFamily: '"Inter", monospace', fontWeight: 500, color: "text.primary", borderColor: theme.palette.divider }}>
                       {deal.symbol || "-"}
@@ -437,7 +455,7 @@ export function DataTable({
                       {deal.symbol || "-"}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: '"Inter", monospace' }}>
-                      {deal.closeTime}
+                      {formatDateTime(deal.closeTime)}
                     </Typography>
                   </Box>
                   <Typography

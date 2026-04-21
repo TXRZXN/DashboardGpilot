@@ -33,7 +33,8 @@ describe('AccountService', () => {
 
     const result = await AccountService.getAccountInfo();
 
-    expect(apiClient).toHaveBeenCalledWith(ENDPOINTS.ACCOUNT);
+    // Adjusted for the new apiClient signature (4 arguments)
+    expect(apiClient).toHaveBeenCalledWith(ENDPOINTS.ACCOUNT, undefined, undefined, undefined);
     expect(result.success).toBe(true);
     expect(result.data).toEqual(mockAccount);
   });
