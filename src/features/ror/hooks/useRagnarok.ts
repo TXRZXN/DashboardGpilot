@@ -16,6 +16,7 @@ export const useRagnarok = () => {
     });
 
     const [workflow, setWorkflow] = useState<string | null>(null);
+    const [tfaProviders, setTfaProviders] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     const GOD_PORT_MAPPING: Record<string, string> = {
@@ -144,28 +145,38 @@ export const useRagnarok = () => {
             });
 
             if (result.success && result.data) {
-                // ตรวจสอบว่าต้องทำ 2FA หรือไม่
-                if (result.data.workflow === "2fa_google_auth") {
-                    setWorkflow("2fa_google_auth");
-                    setUuid(result.data.uuid);
-                    return;
-                }
+                const { workflow: nextWorkflow, uuid: nextUuid, done, data: authData } = result.data;
+                
+                // Update UUID if provided
+                if (nextUuid) setUuid(nextUuid);
 
-                // ถ้าสำเร็จเลย (done: true)
-                if (result.data.done && result.data.data?.accessToken) {
-                    localStorage.setItem("ror_auth_token", result.data.data.accessToken.token);
-                    if (result.data.data.refreshToken) {
-                        localStorage.setItem("ror_refresh_token", result.data.data.refreshToken.token);
+                // Check workflow steps
+                if (nextWorkflow === "terminate" || (done && authData?.accessToken)) {
+                    if (authData?.accessToken) {
+                        localStorage.setItem("ror_auth_token", authData.accessToken.token);
+                        if (authData.refreshToken) {
+                            localStorage.setItem("ror_refresh_token", authData.refreshToken.token);
+                        }
+                        setIsLoggedIn(true);
+                        setWorkflow(null);
+                        
+                        // Fetch accounts immediately after successful login
+                        fetchAccounts();
+
+                        toast({
+                            title: "Welcome to Valhalla",
+                            description: "You have successfully authenticated.",
+                        });
                     }
-                    setIsLoggedIn(true);
-                    
-                    // ดึงข้อมูลบัญชีทันทีหลังจาก login สำเร็จ
-                    fetchAccounts();
-
-                    toast({
-                        title: "Welcome to Valhalla",
-                        description: "You have successfully authenticated.",
-                    });
+                } else if (nextWorkflow === "2fa_google_auth") {
+                    setWorkflow("2fa_google_auth");
+                } else if (nextWorkflow === "2fa_sms_auth") {
+                    setWorkflow("2fa_sms_auth");
+                } else if (nextWorkflow === "2fa") {
+                    setWorkflow("2fa");
+                    if (authData?.tfaProviders) {
+                        setTfaProviders(authData.tfaProviders);
+                    }
                 }
             } else {
                 const errorMsg = result.error?.message || "Invalid credentials";
@@ -189,13 +200,13 @@ export const useRagnarok = () => {
         }
     }, [uuid, toast]);
 
-    const verify2fa = useCallback(async (code: string) => {
+    const verify2faGoogle = useCallback(async (code: string) => {
         try {
             setAuthLoading(true);
             setError(null);
             if (!uuid) throw new Error("Session expired, please login again.");
 
-            const result = await RorService.verify2fa({ 
+            const result = await RorService.verify2faGoogle({ 
                 code, 
                 uuid 
             });
@@ -214,7 +225,7 @@ export const useRagnarok = () => {
 
                     toast({
                         title: "Success",
-                        description: "2FA Verification successful.",
+                        description: "2FA Google Verification successful.",
                     });
                 } else {
                     throw new Error("Invalid response from server");
@@ -235,7 +246,55 @@ export const useRagnarok = () => {
         } finally {
             setAuthLoading(false);
         }
-    }, [uuid, toast]);
+    }, [uuid, toast, fetchAccounts]);
+
+    const verify2faSms = useCallback(async (code: string) => {
+        try {
+            setAuthLoading(true);
+            setError(null);
+            if (!uuid) throw new Error("Session expired, please login again.");
+
+            const result = await RorService.verify2faSms({ 
+                code, 
+                uuid 
+            });
+
+            if (result.success && result.data) {
+                if (result.data.done && result.data.data?.accessToken) {
+                    localStorage.setItem("ror_auth_token", result.data.data.accessToken.token);
+                    if (result.data.data.refreshToken) {
+                        localStorage.setItem("ror_refresh_token", result.data.data.refreshToken.token);
+                    }
+                    setIsLoggedIn(true);
+                    setWorkflow(null);
+
+                    // ดึงข้อมูลบัญชีทันทีหลังจาก 2FA สำเร็จ
+                    fetchAccounts();
+
+                    toast({
+                        title: "Success",
+                        description: "2FA SMS Verification successful.",
+                    });
+                } else {
+                    throw new Error("Invalid response from server");
+                }
+            } else {
+                toast({
+                    title: "Verification Failed",
+                    description: result.error?.message || "Invalid 2FA code",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to verify 2FA.",
+                variant: "destructive",
+            });
+        } finally {
+            setAuthLoading(false);
+        }
+    }, [uuid, toast, fetchAccounts]);
 
     useEffect(() => {
         const token = localStorage.getItem("ror_auth_token");
@@ -261,8 +320,11 @@ export const useRagnarok = () => {
         authLoading,
         error,
         workflow,
+        setWorkflow,
+        tfaProviders,
         login,
-        verify2fa,
+        verify2faGoogle,
+        verify2faSms,
         pledgeData,
         setPledgeData,
         handlePledgeChange,

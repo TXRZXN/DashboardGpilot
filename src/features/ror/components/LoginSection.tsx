@@ -20,8 +20,11 @@ import { GlassPaper, ActionButton } from "./StyledComponents";
 interface LoginSectionProps {
     onLogin: (email: string, password: string) => Promise<void>;
     onVerify2fa: (code: string) => Promise<void>;
+    onVerify2faSms?: (code: string) => Promise<void>;
     isLoading?: boolean;
     workflow: string | null;
+    onSelectWorkflow?: (workflow: string) => void;
+    tfaProviders?: any[];
     error: string | null;
     onClearError: () => void;
 }
@@ -29,8 +32,11 @@ interface LoginSectionProps {
 export const LoginSection: React.FC<LoginSectionProps> = ({ 
     onLogin, 
     onVerify2fa, 
+    onVerify2faSms,
     isLoading, 
     workflow,
+    onSelectWorkflow,
+    tfaProviders,
     error,
     onClearError
 }) => {
@@ -49,11 +55,17 @@ export const LoginSection: React.FC<LoginSectionProps> = ({
     const handle2faSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (twoFactorCode.length === 6) {
-            await onVerify2fa(twoFactorCode);
+            if (workflow === "2fa_sms_auth" && onVerify2faSms) {
+                await onVerify2faSms(twoFactorCode);
+            } else {
+                await onVerify2fa(twoFactorCode);
+            }
         }
     };
 
-    const is2fa = workflow === "2fa_google_auth";
+    const is2fa = workflow === "2fa_google_auth" || workflow === "2fa_sms_auth" || workflow === "2fa";
+    const isSms = workflow === "2fa_sms_auth";
+    const isMultiChoice = workflow === "2fa";
 
     return (
         <Grid size={{ xs: 12, md: 4 }}>
@@ -173,17 +185,59 @@ export const LoginSection: React.FC<LoginSectionProps> = ({
                             )}
                         </ActionButton>
                     </form>
+                ) : isMultiChoice ? (
+                    <Box>
+                        <Typography
+                            variant="h5"
+                            sx={{ textAlign: "center", fontWeight: 800, mb: 4, color: "#d4af37" }}
+                        >
+                            SELECT <br /> VERIFICATION
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ textAlign: "center", color: "#8b949e", mb: 3 }}>
+                            Choose your preferred 2FA method.
+                        </Typography>
+
+                        {tfaProviders?.map((provider) => (
+                            <ActionButton
+                                key={provider.type}
+                                fullWidth
+                                variant="outlined"
+                                sx={{ 
+                                    mb: 2, 
+                                    py: 1.5, 
+                                    borderColor: alpha("#d4af37", 0.5),
+                                    color: "#fff",
+                                    "&:hover": {
+                                        borderColor: "#d4af37",
+                                        backgroundColor: alpha("#d4af37", 0.1),
+                                    }
+                                }}
+                                onClick={() => {
+                                    if (onSelectWorkflow) {
+                                        const nextWorkflow = provider.type === "google" ? "2fa_google_auth" : "2fa_sms_auth";
+                                        onSelectWorkflow(nextWorkflow);
+                                    }
+                                }}
+                            >
+                                {provider.type === "google" ? "Google Authenticator" : "SMS Verification"}
+                            </ActionButton>
+                        ))}
+                    </Box>
                 ) : (
                     <form onSubmit={handle2faSubmit}>
                         <Typography
                             variant="h5"
                             sx={{ textAlign: "center", fontWeight: 800, mb: 4, color: "#d4af37" }}
                         >
-                            GOOGLE <br /> AUTHENTICATOR
+                            {isSms ? "SMS" : "GOOGLE"} <br /> AUTHENTICATOR
                         </Typography>
 
                         <Typography variant="body2" sx={{ textAlign: "center", color: "#8b949e", mb: 3 }}>
-                            Please enter the 6-digit code from your app.
+                            {isSms 
+                                ? "Please enter the code sent to your phone." 
+                                : "Please enter the 6-digit code from your app."
+                            }
                         </Typography>
 
                         <TextField

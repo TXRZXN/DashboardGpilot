@@ -21,7 +21,10 @@ export const RecordOfRagnarok: React.FC = () => {
         authLoading, 
         login,
         workflow,
-        verify2fa,
+        setWorkflow,
+        tfaProviders,
+        verify2faGoogle,
+        verify2faSms,
         error,
         setError,
         filteredAccounts
@@ -64,9 +67,12 @@ export const RecordOfRagnarok: React.FC = () => {
                             ) : (
                                 <LoginSection 
                                     onLogin={login} 
-                                    onVerify2fa={verify2fa}
+                                    onVerify2fa={verify2faGoogle}
+                                    onVerify2faSms={verify2faSms}
                                     isLoading={authLoading} 
                                     workflow={workflow}
+                                    onSelectWorkflow={setWorkflow}
+                                    tfaProviders={tfaProviders}
                                     error={error}
                                     onClearError={() => setError(null)}
                                 />

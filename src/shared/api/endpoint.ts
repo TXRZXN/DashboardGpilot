@@ -59,18 +59,14 @@ export const SUB_ENDPOINTS = {
  * รายการ Endpoint ของ Record of Ragnarok (Dedicated Service)
  */
 export const ROR_ENDPOINTS = {
-  /** เช็คสถานะ API */
-  HEALTH: `/health`,
   /** Wizard สำหรับดึง UUID */
   WIZARD: `/api/v2/my/signin/wizard`,
   /** เข้าสู่ระบบเฉพาะ ROR (B2Broker/STKPRO) */
   AUTH_LOGIN: `/api/v2/my/signin`,
   /** ยืนยันรหัส 2FA Google */
   AUTH_2FA_GOOGLE: `/api/v2/my/2fa/google`,
-  /** ดึงข้อมูลการ Pledge */
-  PLEDGE: `/pledge`,
-  /** ดึงข้อมูล Leaderboard */
-  RANKING: `/ranking`,
+  /** ยืนยันรหัส 2FA SMS */
+  AUTH_2FA_SMS: `/api/v2/my/2fa/sms`,
   /** ดึงข้อมูลบัญชีเทรด */
   ACCOUNTS: '/api/v2/my/accounts',
 } as const;

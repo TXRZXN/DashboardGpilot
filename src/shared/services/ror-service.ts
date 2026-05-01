@@ -120,11 +120,11 @@ export const RorService = {
   },
 
   /**
-   * ยืนยันรหัส 2FA สำหรับ ROR
+   * ยืนยันรหัส 2FA Google สำหรับ ROR
    */
-  verify2fa: async (data: { code: string; uuid: string }): Promise<ServiceResponse<RorAuthResponse>> => {
+  verify2faGoogle: async (data: { code: string; uuid: string }): Promise<ServiceResponse<RorAuthResponse>> => {
     try {
-      logger.info('Verifying ROR 2FA code', { uuid: data.uuid });
+      logger.info('Verifying ROR 2FA Google code', { uuid: data.uuid });
 
       const result = await apiClient<RorAuthResponse>(ROR_ENDPOINTS.AUTH_2FA_GOOGLE, {
         method: 'POST',
@@ -140,8 +140,8 @@ export const RorService = {
 
       return { success: true, data: result, error: null };
     } catch (error) {
-      const errorMsg = error instanceof ApiError ? error.message : 'รหัส 2FA ไม่ถูกต้อง';
-      logger.error('ROR 2FA verification failed', error instanceof Error ? error : String(error));
+      const errorMsg = error instanceof ApiError ? error.message : 'รหัส 2FA Google ไม่ถูกต้อง';
+      logger.error('ROR 2FA Google verification failed', error instanceof Error ? error : String(error));
 
       return {
         success: false,
@@ -152,22 +152,37 @@ export const RorService = {
   },
 
   /**
-   * เช็คสถานะ API ROR
+   * ยืนยันรหัส 2FA SMS สำหรับ ROR
    */
-  checkHealth: async (): Promise<ServiceResponse<{ status: string }>> => {
+  verify2faSms: async (data: { code: string; uuid: string }): Promise<ServiceResponse<RorAuthResponse>> => {
     try {
-      const result = await apiClient<{ status: string }>(ROR_ENDPOINTS.HEALTH, {
-        method: 'GET'
+      logger.info('Verifying ROR 2FA SMS code', { uuid: data.uuid });
+
+      const result = await apiClient<RorAuthResponse>(ROR_ENDPOINTS.AUTH_2FA_SMS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          code: data.code,
+          uuid: data.uuid
+        }),
       }, undefined, SERVICE_BASE_ROR);
+
       return { success: true, data: result, error: null };
     } catch (error) {
-      return { 
-        success: false, 
-        data: null, 
-        error: { code: 'HEALTH_CHECK_ERROR', message: 'ROR API connection failed' } 
+      const errorMsg = error instanceof ApiError ? error.message : 'รหัส 2FA SMS ไม่ถูกต้อง';
+      logger.error('ROR 2FA SMS verification failed', error instanceof Error ? error : String(error));
+
+      return {
+        success: false,
+        data: null,
+        error: { code: 'ROR_2FA_SMS_ERROR', message: errorMsg }
       };
     }
   },
+
 
   /**
    * ดึงรายการบัญชีเทรดจาก Strikepro (External API)
