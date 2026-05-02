@@ -23,11 +23,14 @@ import {
   Login as LoginIcon
 } from "@mui/icons-material";
 import { AuthService } from "@/shared/services/auth-service";
+import { useAuth } from "@/shared/providers/auth-provider";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AdsClick as AdsClickIcon } from "@mui/icons-material";
 
 export function LoginPage() {
   const router = useRouter();
+  const { login: authLogin } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,15 +49,23 @@ export function LoginPage() {
       });
 
       if (res.success && res.data) {
-        // นำทางไปยัง Dashboard หรือหน้าเปลี่ยนรหัสผ่านถ้าจำเป็น
-        if (res.data.user.requirePasswordChange) {
-            router.push("/change-password"); // สมมติว่ามีหน้านี้
+        // อัปเดตสถานะใน AuthProvider
+        authLogin(res.data);
+
+        // ตรวจสอบว่าต้องเปลี่ยนรหัสผ่านหรือไม่
+        const isPasswordChangeRequired = 
+          res.data.user.requirePasswordChange || 
+          res.error?.code === "AUTH_PASSWORD_CHANGE_REQUIRED";
+
+        if (isPasswordChangeRequired) {
+            router.push("/change-password");
         } else {
             router.push("/dashboard");
         }
       } else {
         setError(res.error?.message || "เข้าสู่ระบบไม่สำเร็จ");
       }
+
     } catch (err) {
       setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
@@ -132,6 +143,7 @@ export function LoginPage() {
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
+                autoComplete="current-password"
                 onChange={(e) => setPassword(e.target.value)}
                 InputProps={{
                   startAdornment: (
@@ -181,7 +193,7 @@ export function LoginPage() {
           </form>
 
           <Box sx={{ mt: 4, textAlign: "center" }}>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
               Don't have an account?{" "}
               <Link 
                 href="/register" 
@@ -191,6 +203,27 @@ export function LoginPage() {
                 Sign Up
               </Link>
             </Typography>
+            
+            <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                หากยังไม่มีบัญชี StrikePro สมัครได้ที่นี่
+              </Typography>
+              <Button
+                component="a"
+                href="https://my.strikeprofx.com/register?referral=93"
+                target="_blank"
+                rel="noopener noreferrer"
+                startIcon={<AdsClickIcon />}
+                sx={{ 
+                  mt: 1,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  color: 'success.main'
+                }}
+              >
+                สมัคร StrikePro
+              </Button>
+            </Box>
           </Box>
         </CardContent>
       </Card>

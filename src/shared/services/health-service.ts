@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
-import { ENDPOINTS } from '@/shared/api/endpoint';
+import { ENDPOINTS, SUB_ENDPOINTS } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
 import type { HealthResponse } from '@/shared/types/api';
 
@@ -16,7 +16,7 @@ export const HealthService = {
   checkHealth: async (serviceBase?: string): Promise<HealthResponse & { service?: string }> => {
     try {
       const isSub = serviceBase?.includes('/sub');
-      const endpoint = isSub ? '/health' : ENDPOINTS.HEALTH; // Sub-Backend uses /health or /api/v1/health
+      const endpoint = isSub ? SUB_ENDPOINTS.HEALTH : ENDPOINTS.HEALTH; // Sub-Backend uses /health or /api/v1/health
       
       logger.debug('Checking API health', { serviceBase, endpoint });
       const response = await apiClient<HealthResponse>(endpoint, undefined, undefined, serviceBase);

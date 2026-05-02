@@ -1,7 +1,9 @@
 import { ApiError } from './api-error';
-import { API_GATEWAY_MAIN } from './endpoint';
+import { API_GATEWAY_MAIN, API_GATEWAY_SUB, SUB_ENDPOINTS } from './endpoint';
 import { logger } from '@/shared/utils/logger';
 
+// Module-level variable to synchronize token refresh calls
+let refreshPromise: Promise<boolean> | null = null;
 
 // Configuration for Retry Strategy (Global Rule #3)
 const RETRY_CONFIG = {
@@ -56,6 +58,11 @@ const executeSingleFetch = async <T>(
     });
 
     if (!response.ok) {
+      // 401 Unauthorized is handled specially for token refresh
+      if (response.status === 401) {
+        return { success: false, retryable: false, errorStatus: 401 };
+      }
+
       const errorData = await response.json().catch(() => ({}));
       const errorMsg = errorData.error || errorData.detail || response.statusText;
 
@@ -92,7 +99,8 @@ const performFetchWithRetry = async <T>(
   options: RequestInit,
   traceId: string,
   endpoint: string,
-  skipInternalHeaders?: boolean
+  skipInternalHeaders?: boolean,
+  skipAuthRefresh?: boolean
 ): Promise<T> => {
   let attempt = 0;
   let lastError: any;
@@ -105,6 +113,35 @@ const performFetchWithRetry = async <T>(
       return result.data as T;
     }
 
+    // Handle 401 Unauthorized (Token Expired)
+    if (result.errorStatus === 401 && !skipAuthRefresh && !skipInternalHeaders) {
+      logger.warn('Unauthorized (401) detected. Attempting token refresh...', { traceId, endpoint });
+
+      try {
+        // Concurrency Lock: If multiple requests fail at the same time, only one refresh call is made
+        if (!refreshPromise) {
+          // Dynamic import to avoid circular dependency
+          const { AuthService } = await import('@/shared/services/auth-service');
+          refreshPromise = AuthService.refreshToken().then(res => {
+             refreshPromise = null; // Reset for future use
+             return res.success;
+          });
+        }
+
+        const isRefreshed = await refreshPromise;
+        if (isRefreshed) {
+           logger.info('Token refreshed. Retrying original request...', { traceId });
+           // Retry exactly once with the new token
+           return performFetchWithRetry<T>(url, options, traceId, endpoint, skipInternalHeaders, true);
+        } else {
+           throw new ApiError('Session expired. Please login again.', 401);
+        }
+      } catch (err) {
+        logger.error('Failed to refresh token during request', err instanceof Error ? err : String(err), { traceId });
+        throw new ApiError('Session expired. Please login again.', 401);
+      }
+    }
+
     if (result.retryable) {
       lastError = result.errorStatus || result.error;
       const delay = RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt - 1);
@@ -113,6 +150,8 @@ const performFetchWithRetry = async <T>(
       continue;
     }
     
+    // Non-retryable error
+    lastError = result.errorStatus || result.error || 'Unknown Error';
     break;
   }
 
@@ -120,9 +159,10 @@ const performFetchWithRetry = async <T>(
     logger.error(`API Error: ${endpoint}`, lastError, { traceId });
     throw lastError;
   }
+
   const finalError = lastError instanceof Error ? lastError : new Error(String(lastError));
   logger.error(`Network Error: ${endpoint}`, finalError, { traceId });
-  throw new ApiError(finalError.message, 500);
+  throw new ApiError(finalError.message, typeof lastError === 'number' ? lastError : 500);
 };
 
 /**
@@ -133,7 +173,8 @@ export const apiClient = async <T>(
   endpoint: string,
   options?: RequestInit,
   params?: Record<string, string | number | boolean | null | undefined>,
-  serviceBase?: string
+  serviceBase?: string,
+  skipAuthRefresh?: boolean
 ): Promise<T> => {
   const traceId = generateTraceId();
   const safeEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -157,8 +198,8 @@ export const apiClient = async <T>(
 
   /**
    * สร้าง Final Path
-   * - ถ้าเป็น Sub Service: /api/gateway/sub/api/v1/{endpoint}
-   * - ถ้าเป็น Main Service: /api/gateway/gpilot/api/v1/{accountId}/{endpoint}
+   * - ถ้าเป็น Sub Service: /api/v1/{endpoint}
+   * - ถ้าเป็น Main Service: /api/v1/{accountId}/{endpoint}
    */
   let apiPath = '';
   if (isSubService) {
@@ -192,6 +233,5 @@ export const apiClient = async <T>(
   // ถ้าเป็น ROR Service ให้ข้าม Header ภายในโดยอัตโนมัติ เพื่อไม่ให้ API ภายนอกพัง
   const skipInternalHeaders = isRorService;
 
-  return performFetchWithRetry<T>(url, options || {}, traceId, endpoint, skipInternalHeaders);
-
+  return performFetchWithRetry<T>(url, options || {}, traceId, endpoint, skipInternalHeaders, skipAuthRefresh);
 };

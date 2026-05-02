@@ -18,15 +18,15 @@ import {
   Person as PersonIcon, 
   Email as EmailIcon, 
   Lock as LockIcon, 
-  Group as GroupIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   ArrowForward as ArrowForwardIcon,
   Numbers as NumbersIcon,
-  VpnKey as VpnKeyIcon
+  VpnKey as VpnKeyIcon,
+  Dashboard as DashboardIcon
 } from "@mui/icons-material";
 import { AuthService } from "@/shared/services/auth-service";
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function RegisterContent() {
@@ -36,7 +36,6 @@ function RegisterContent() {
   const [showInvestorPassword, setShowInvestorPassword] = useState(false);
   
   const [email, setEmail] = useState("");
-  const [refId, setRefId] = useState("");
   const [mt5Id, setMt5Id] = useState("");
   const [investorPassword, setInvestorPassword] = useState("");
   
@@ -44,23 +43,8 @@ function RegisterContent() {
   const [error, setError] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<{ email: string; defaultPassword?: string } | null>(null);
 
-  useEffect(() => {
-    const ref = searchParams.get("ref");
-    if (ref) {
-      setRefId(ref);
-      setError(null);
-    } else {
-      setError("A Referral ID is strictly required to register an account.");
-    }
-  }, [searchParams]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!refId) {
-      setError("Cannot register: Referral ID is missing.");
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
@@ -202,27 +186,6 @@ function RegisterContent() {
                   }
                 }}
               />
-              <TextField
-                fullWidth
-                label="Referral ID"
-                value={refId}
-                onChange={(e) => setRefId(e.target.value)}
-                required
-                error={!refId}
-                disabled={Boolean(searchParams.get("ref"))}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <GroupIcon sx={{ color: "primary.main", fontSize: 20 }} />
-                      </InputAdornment>
-                    ),
-                    sx: { borderRadius: 3, bgcolor: searchParams.get("ref") ? 'rgba(148, 163, 184, 0.05)' : 'transparent' }
-                  }
-                }}
-                helperText={!refId ? "Referral ID is mandatory" : "Pre-filled from your referral link"}
-              />
-
               {successData ? (
                 <Stack spacing={3}>
                   <Alert severity="success" sx={{ borderRadius: 3 }}>
@@ -244,6 +207,20 @@ function RegisterContent() {
                   >
                     ไปหน้า Login
                   </Button>
+                  <Button
+                    fullWidth
+                    size="large"
+                    variant="outlined"
+                    onClick={() => router.push("/dashboard")}
+                    startIcon={<DashboardIcon />}
+                    sx={{ 
+                      borderRadius: 3, 
+                      fontWeight: 700,
+                      textTransform: 'none'
+                    }}
+                  >
+                    กลับหน้า Dashboard
+                  </Button>
                 </Stack>
               ) : (
                 <Button
@@ -251,7 +228,7 @@ function RegisterContent() {
                   size="large"
                   type="submit"
                   variant="contained"
-                  disabled={!refId || isLoading}
+                  disabled={isLoading}
                   sx={{ 
                     borderRadius: 3, 
                     py: 1.5, 

@@ -180,5 +180,57 @@ export const AuthService = {
         error: { code: 'UPDATE_MT5_PASSWORD_ERROR', message: errorMsg } 
       };
     }
+  },
+
+  /**
+   * ขอ Access Token ใหม่ด้วย Refresh Token
+   */
+  refreshToken: async (): Promise<ServiceResponse<LoginResponse>> => {
+    try {
+      if (typeof window === 'undefined') {
+        return { success: false, data: null, error: { code: 'CLIENT_ONLY', message: 'Refresh token must be run on client side' } };
+      }
+
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        logger.warn('No refresh token found');
+        return { success: false, data: null, error: { code: 'MISSING_REFRESH_TOKEN', message: 'ไม่พบ Refresh Token' } };
+      }
+
+      logger.info('Refreshing access token');
+      
+      // เรียก API โดยตรงเพื่อเลี่ยง Infinite Loop ใน apiClient
+      const response = await apiClient<ServiceResponse<LoginResponse>>(SUB_ENDPOINTS.AUTH_REFRESH, {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken: refreshToken }),
+      }, undefined, API_GATEWAY_SUB);
+
+      if (!response.success || !response.data) {
+        // ถ้า Refresh ไม่ผ่าน ให้ล้าง Token และ Logout
+        logger.error('Token refresh failed', response.error?.message || 'Session expired', { error: response.error });
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        return response;
+      }
+
+      const result = response.data;
+      localStorage.setItem('auth_token', result.accessToken);
+      if (result.refreshToken) {
+        localStorage.setItem('refresh_token', result.refreshToken);
+      }
+      document.cookie = `auth_token=${result.accessToken}; path=/; max-age=86400; SameSite=Strict`;
+
+      logger.info('Token refreshed successfully');
+      return response;
+
+    } catch (error) {
+      logger.error('Token refresh exception', error instanceof Error ? error : String(error));
+      return {
+        success: false,
+        data: null,
+        error: { code: 'REFRESH_TOKEN_EXCEPTION', message: 'เกิดข้อผิดพลาดในการต่ออายุเซสชัน' }
+      };
+    }
   }
 };

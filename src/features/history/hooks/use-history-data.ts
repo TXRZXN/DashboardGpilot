@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnalyticsService } from "@/shared/services/analytics-service";
-import { HealthService } from "@/shared/services/health-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
 import type { GroupedDeal } from "@/shared/types/api";
 
@@ -69,23 +68,16 @@ export function useHistoryData(serviceBase?: string) {
       sortDirection
     ],
     queryFn: async () => {
-      const [response, healthResponse] = await Promise.all([
-        AnalyticsService.getGroupedTrades({
-          page: page + 1,
-          limit: rowsPerPage,
-          date_from: startDate || null,
-          end_date: endDate || null,
-          symbol: debouncedSymbol || null,
-          type: typeFilter === "ALL" ? null : typeFilter,
-          order_by: sortField,
-          order_dir: sortDirection.toUpperCase() as "ASC" | "DESC"
-        }, serviceBase),
-        HealthService.checkHealth(serviceBase)
-      ]);
-
-      if (!healthResponse.success || healthResponse.data?.status !== "ok") {
-        throw new Error(healthResponse.error || "System health check failed");
-      }
+      const response = await AnalyticsService.getGroupedTrades({
+        page: page + 1,
+        limit: rowsPerPage,
+        date_from: startDate || null,
+        end_date: endDate || null,
+        symbol: debouncedSymbol || null,
+        type: typeFilter === "ALL" ? null : typeFilter,
+        order_by: sortField,
+        order_dir: sortDirection.toUpperCase() as "ASC" | "DESC"
+      }, serviceBase);
 
       if (!response.success || !response.data) {
         throw new Error(response.error?.message ?? "Failed to fetch trade history");
@@ -93,7 +85,7 @@ export function useHistoryData(serviceBase?: string) {
 
       return response.data;
     },
-    enabled: isHealthy,
+    enabled: true, // ปรับให้ดึงข้อมูลเสมอ ไม่รอสถานะ Health เพื่อแก้ปัญหาตอนเปลี่ยนหน้า
     staleTime: 60 * 1000,
   });
 

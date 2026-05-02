@@ -24,8 +24,9 @@ export interface ServiceResponse<T> {
     page?: number;
     limit?: number;
     totalPage?:number;
-  };
+  } | null;
 }
+
 
 /**
  * Interface สำหรับการ Check Health ของ API
@@ -227,20 +228,9 @@ export interface GroupedTradesResponse {
 // Referral Sync Types
 // ---------------------------------------------
 
-export interface ReferralSyncTrade {
-  readonly email: string;
-  readonly accountId: string;
-  readonly amount: number;
-  readonly currency: string;
-  readonly date: string;
-  readonly status: 'success' | 'failed';
-  readonly error?: string;
-}
-
 export interface ReferralSyncSummary {
-  readonly totalThisWeek: number;
-  readonly lastSync: string;
-  readonly trades: ReferralSyncTrade[];
+  readonly successCount: number;
+  readonly failedUsers: { email: string; error: string }[];
 }
 
 export interface ReferralSyncRequest {

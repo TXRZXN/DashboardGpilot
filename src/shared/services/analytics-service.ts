@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/api/client';
 import { ApiError } from '@/shared/api/api-error';
-import { ENDPOINTS, SERVICE_BASE_GPILOT } from '@/shared/api/endpoint';
+import { ENDPOINTS, SERVICE_BASE_GPILOT, SUB_ENDPOINTS } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
 import type { ServiceResponse, ProductDetail, DashboardSummary, TradeRequest, GroupedTradesResponse } from '@/shared/types/api';
 import { MOCK_PRODUCT_DETAIL } from '../mock/dashboard-mock';
@@ -33,8 +33,10 @@ export const AnalyticsService = {
       // Only pass params if not empty to match expected apiClient behavior in tests
       const finalParams = Object.keys(mappedParams).length > 0 ? mappedParams : undefined;
 
+      const endpoint = serviceBase?.includes('/sub') ? SUB_ENDPOINTS.TRADES : ENDPOINTS.TRADES_GROUPED;
+      
       return await apiClient<ServiceResponse<GroupedTradesResponse>>(
-        ENDPOINTS.TRADES_GROUPED,
+        endpoint,
         undefined,
         finalParams,
         serviceBase

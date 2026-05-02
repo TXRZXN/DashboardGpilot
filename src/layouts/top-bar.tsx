@@ -14,23 +14,44 @@ import {
     TextField,
     Divider,
     Stack,
+    Menu,
+    MenuItem,
+    Avatar,
+    ListItemIcon,
+    ListItemText,
 } from "@mui/material";
 import {
     LightMode as LightModeIcon,
     DarkMode as DarkModeIcon,
     Login as LoginIcon,
-    Close as CloseIcon,
-    AdsClick as AdsClickIcon,
+    Logout as LogoutIcon,
+    Person as PersonIcon,
+    PersonAdd as PersonAddIcon,
 } from "@mui/icons-material";
 import { useThemeMode } from "@/shared/ui/theme-provider";
+import { useAuth } from "@/shared/providers/auth-provider";
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function TopBar() {
     const { mode, toggleTheme } = useThemeMode();
-    const [loginOpen, setLoginOpen] = useState(false);
+    const { user, isAuthenticated, logout } = useAuth();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const router = useRouter();
 
-    const handleOpenLogin = () => setLoginOpen(true);
-    const handleCloseLogin = () => setLoginOpen(false);
+    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleLogout = () => {
+        handleMenuClose();
+        logout();
+    };
 
     return (
         <>
@@ -48,127 +69,117 @@ export function TopBar() {
                 <Toolbar sx={{ justifyContent: "space-between", px: 2 }}>
                     <Box sx={{ flexGrow: 1 }} />
                     <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, lg: 2 } }}>
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            component="a"
-                            href="https://my.strikeprofx.com/register?referral=93"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            startIcon={<AdsClickIcon fontSize="small" />}
-                            sx={{
-                                borderRadius: 2,
-                                textTransform: "none",
-                                fontWeight: 600,
-                                color: mode === "dark" ? "success.light" : "success.dark",
-                                borderColor: mode === "dark" ? "success.light" : "success.dark",
-                                "&:hover": {
-                                    bgcolor: mode === "dark" ? "rgba(74, 222, 128, 0.1)" : "rgba(22, 163, 74, 0.05)",
-                                    borderColor: mode === "dark" ? "success.light" : "success.dark",
-                                },
-                                px: { lg: 2 },
-                                display: { xs: "none", sm: "flex" },
-                            }}
-                        >
-                            สมัคร Strikepro
-                        </Button>
-                        <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<LoginIcon fontSize="small" />}
-                            onClick={handleOpenLogin}
-                            sx={{
-                                borderRadius: 2,
-                                textTransform: "none",
-                                fontWeight: 600,
-                                boxShadow: "none",
-                                bgcolor: "primary.main",
-                                "&:hover": { bgcolor: "primary.dark", boxShadow: "none" },
-                                px: { lg: 2.5 },
-                            }}
-                        >
-                            Login
-                        </Button>
-                        <IconButton
-                            onClick={toggleTheme}
-                            aria-label="Toggle brightness mode"
-                            sx={{
-                                color: "text.secondary",
-                            }}
-                        >
-                            {mode === "dark" ? (
-                                <LightModeIcon sx={{ color: "#FBBF24" }} />
-                            ) : (
-                                <DarkModeIcon sx={{ color: "#64748B" }} />
-                            )}
-                        </IconButton>
+                        {isAuthenticated ? (
+                            <>
+                                <IconButton
+                                    onClick={handleMenuOpen}
+                                    sx={{
+                                        p: 0.5,
+                                        border: '2px solid',
+                                        borderColor: 'primary.main',
+                                        borderRadius: '50%',
+                                    }}
+                                >
+                                    <Avatar 
+                                        sx={{ 
+                                            width: 32, 
+                                            height: 32, 
+                                            bgcolor: 'primary.main',
+                                            fontSize: '0.875rem'
+                                        }}
+                                    >
+                                        {user?.email?.[0].toUpperCase() || 'U'}
+                                    </Avatar>
+                                </IconButton>
+                                <Menu
+                                    anchorEl={anchorEl}
+                                    open={Boolean(anchorEl)}
+                                    onClose={handleMenuClose}
+                                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                                    slotProps={{
+                                        paper: {
+                                            sx: {
+                                                mt: 1.5,
+                                                borderRadius: 2,
+                                                minWidth: 200,
+                                                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                                                bgcolor: mode === 'dark' ? '#1E293B' : '#FFFFFF',
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <Box sx={{ px: 2, py: 1.5 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                            User Profile
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" noWrap>
+                                            {user?.email}
+                                        </Typography>
+                                    </Box>
+                                    <Divider />
+                                    
+                                    <MenuItem onClick={() => { toggleTheme(); handleMenuClose(); }}>
+                                        <ListItemIcon>
+                                            {mode === 'dark' ? <LightModeIcon fontSize="small" sx={{ color: "#FBBF24" }} /> : <DarkModeIcon fontSize="small" sx={{ color: "#64748B" }} />}
+                                        </ListItemIcon>
+                                        <ListItemText>
+                                            {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                                        </ListItemText>
+                                    </MenuItem>
+
+                                    <MenuItem onClick={() => { router.push("/register"); handleMenuClose(); }}>
+                                        <ListItemIcon>
+                                            <PersonAddIcon fontSize="small" />
+                                        </ListItemIcon>
+                                        <ListItemText>Register</ListItemText>
+                                    </MenuItem>
+
+                                    <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+                                        <ListItemIcon>
+                                            <LogoutIcon fontSize="small" color="error" />
+                                        </ListItemIcon>
+                                        <ListItemText>Logout</ListItemText>
+                                    </MenuItem>
+                                </Menu>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={<LoginIcon fontSize="small" />}
+                                    onClick={() => router.push("/login")}
+                                    sx={{
+                                        borderRadius: 2,
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        boxShadow: "none",
+                                        bgcolor: "primary.main",
+                                        "&:hover": { bgcolor: "primary.dark", boxShadow: "none" },
+                                        px: { lg: 2.5 },
+                                    }}
+                                >
+                                    Login
+                                </Button>
+                                <IconButton
+                                    onClick={toggleTheme}
+                                    aria-label="Toggle brightness mode"
+                                    sx={{
+                                        color: "text.secondary",
+                                    }}
+                                >
+                                    {mode === "dark" ? (
+                                        <LightModeIcon sx={{ color: "#FBBF24" }} />
+                                    ) : (
+                                        <DarkModeIcon sx={{ color: "#64748B" }} />
+                                    )}
+                                </IconButton>
+                            </>
+                        )}
                     </Box>
                 </Toolbar>
             </AppBar>
-
-            {/* Login Modal */}
-            <Dialog
-                open={loginOpen}
-                onClose={handleCloseLogin}
-                maxWidth="xs"
-                fullWidth
-                slotProps={{
-                    paper: {
-                        sx: {
-                            borderRadius: 3,
-                            bgcolor: mode === "dark" ? "#0F172A" : "#FFFFFF",
-                            backgroundImage: "none",
-                        },
-                    },
-                }}
-            >
-                <DialogTitle
-                    component="div"
-                    sx={{ m: 0, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                >
-                    <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: "Manrope" }}>
-                        Login
-                    </Typography>
-                    <IconButton onClick={handleCloseLogin} size="small">
-                        <CloseIcon />
-                    </IconButton>
-                </DialogTitle>
-                <Divider />
-                <DialogContent sx={{ p: 3 }}>
-                    <Stack spacing={2.5} sx={{ mt: 1 }}>
-                        <TextField
-                            fullWidth
-                            label="Email or Username"
-                            variant="outlined"
-                            placeholder="Enter your email"
-                            autoFocus
-                        />
-                        <TextField
-                            fullWidth
-                            label="Password"
-                            type="password"
-                            variant="outlined"
-                            placeholder="••••••••"
-                        />
-                    </Stack>
-                </DialogContent>
-                <DialogActions sx={{ p: 3, pt: 0 }}>
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        onClick={handleCloseLogin}
-                        sx={{
-                            py: 1.2,
-                            borderRadius: 2,
-                            textTransform: "none",
-                            fontWeight: 600,
-                            fontSize: "1rem",
-                        }}
-                    >
-                        Sign In
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </>
     );
 }

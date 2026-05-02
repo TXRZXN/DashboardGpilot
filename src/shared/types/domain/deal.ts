@@ -20,3 +20,16 @@ export interface Deal {
   readonly time: string; // ISO 8601 string (e.g., "2024-03-26T15:30:00")
   readonly timeMsc: number;
 }
+
+/**
+ * รายการเทรดที่ Sync มาจาก Backend-Sub
+ */
+export interface SyncedTrade extends Deal {
+  readonly userId: string;
+  readonly userEmail?: string | null;
+  readonly refId: string;
+  readonly accountId: string;
+  readonly accountCurrency: string;
+  readonly isReferralData: boolean;
+  readonly sourceRefId?: string | null;
+}

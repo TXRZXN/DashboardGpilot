@@ -49,10 +49,16 @@ export const SUB_ENDPOINTS = {
   AUTH_UPDATE_PASSWORD: `/auth/password`,
   /** เปลี่ยนรหัสผ่าน MT5 */
   AUTH_UPDATE_MT5_PASSWORD: `/auth/mt5-password`,
-  /** ดึงข้อมูลเทรดที่ Sync แล้ว */
+  /** ดึงข้อมูลเทรดที่ Sync แล้ว (ของตัวเอง) */
   TRADES: `/trades`,
+  /** ดึงข้อมูลเทรดที่ Sync แล้ว (ของ Referral) */
+  TRADES_REFERRALS: `/trades/referrals`,
+  /** สั่ง Sync ข้อมูลการเทรดของตัวเอง (Manual) */
+  TRADES_SYNC_ME: `/trades/sync/me`,
   /** สั่ง Sync ข้อมูลการเทรด Referral (Manual) */
   TRADES_SYNC_REFERRALS: `/trades/sync/referrals`,
+  /** ขอ Refresh Access Token */
+  AUTH_REFRESH: `/auth/refresh`,
 } as const;
 
 /**

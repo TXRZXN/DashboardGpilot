@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnalyticsService } from "@/shared/services/analytics-service";
-import { HealthService } from "@/shared/services/health-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
 import type { ProductDetail } from "@/shared/types/api";
 
@@ -22,22 +21,15 @@ export function useProductDetailData(serviceBase?: string) {
   } = useQuery({
     queryKey: ["product-detail", serviceBase],
     queryFn: async () => {
-      const [dashResponse, healthResponse] = await Promise.all([
-        AnalyticsService.getProductDetail(undefined, serviceBase),
-        HealthService.checkHealth(serviceBase),
-      ]);
+      const response = await AnalyticsService.getProductDetail(undefined, serviceBase);
 
-      if (!healthResponse.success || healthResponse.data?.status !== "ok") {
-        throw new Error(healthResponse.error || "System health check failed");
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message ?? "Failed to fetch product detail");
       }
 
-      if (!dashResponse.success || !dashResponse.data) {
-        throw new Error(dashResponse.error?.message ?? "Failed to fetch product detail");
-      }
-
-      return dashResponse.data;
+      return response.data;
     },
-    enabled: isHealthy,
+    enabled: true, // ปรับให้ดึงข้อมูลเสมอ ไม่รอสถานะ Health เพื่อแก้ปัญหาตอนเปลี่ยนหน้า
     // SCALE OPTIMIZATION: Keep data fresh for 1 minute
     staleTime: 60 * 1000,
   });

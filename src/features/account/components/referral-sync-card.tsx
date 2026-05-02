@@ -36,7 +36,7 @@ import {
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { TradeHistoryService } from "@/shared/services/trade-history-service";
 import { createLogger } from "@/shared/utils/logger";
-import { ReferralSyncSummary, ReferralSyncTrade } from "@/shared/types/api";
+import { SyncedTrade } from "@/shared/types/api";
 import { getMostRecentMonday, getEndOfWeek, addDays, toISODateString } from "@/shared/utils/date-utils";
 
 const logger = createLogger("ReferralSyncCard");
@@ -61,8 +61,9 @@ export function ReferralSyncCard() {
   
   const [anchorDate, setAnchorDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<ReferralSyncSummary | null>(null);
+  const [data, setData] = useState<SyncedTrade[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<string | null>(null);
 
   const currentMonday = useMemo(() => getMostRecentMonday(anchorDate), [anchorDate]);
   const currentSunday = useMemo(() => getEndOfWeek(anchorDate), [anchorDate]);
@@ -77,6 +78,10 @@ export function ReferralSyncCard() {
       });
       if (response.success && response.data) {
         setData(response.data);
+        // เก็บวันที่ซิงค์ล่าสุดจากข้อมูลล่าสุด (ถ้ามี)
+        if (response.data.length > 0) {
+          setLastSync(response.data[0].time);
+        }
       } else {
         setError(response.error?.message ?? "ไม่สามารถดึงข้อมูลประวัติได้");
       }
@@ -100,17 +105,17 @@ export function ReferralSyncCard() {
 
 
   const handleExport = () => {
-    if (!data?.trades.length) return;
+    if (!data.length) return;
 
     // Create CSV content
     const headers = ["วันที่", "Account ID", "Email", "ยอดที่หัก (USD)", "สถานะ", "หมายเหตุ"];
-    const rows = data.trades.map(t => [
-      formatDate(t.date),
+    const rows = data.map(t => [
+      formatDate(t.time),
       t.accountId,
-      t.email,
-      t.amount.toFixed(2),
-      t.status === 'success' ? 'สำเร็จ' : 'ล้มเหลว',
-      t.error ?? ''
+      t.userEmail ?? '',
+      Math.abs(t.netProfit).toFixed(2),
+      'สำเร็จ',
+      t.comment ?? ''
     ]);
 
     const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -152,10 +157,10 @@ export function ReferralSyncCard() {
               <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                 ระบบซิงค์ข้อมูลเพื่อน
               </Typography>
-              {data?.lastSync && (
+              {lastSync && (
                 <Typography variant="caption" sx={{ color: "text.secondary", display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <ScheduleIcon sx={{ fontSize: 12 }} /> 
-                  ซิงค์ล่าสุด: {formatDate(data.lastSync)}
+                  ซิงค์ล่าสุด: {formatDate(lastSync)}
                 </Typography>
               )}
             </Box>
@@ -166,7 +171,7 @@ export function ReferralSyncCard() {
               <span>
                 <IconButton 
                   onClick={handleExport} 
-                  disabled={loading || !data?.trades.length}
+                  disabled={loading || !data.length}
                   sx={{ border: '1px solid', borderColor: 'divider' }}
                 >
                   <ExportIcon fontSize="small" />
@@ -239,7 +244,7 @@ export function ReferralSyncCard() {
                   COMMISSION THIS WEEK
                 </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.5, color: 'text.primary' }}>
-                  ${data?.totalThisWeek.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ${data.reduce((acc, curr) => acc + Math.abs(curr.netProfit), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </Typography>
               </Box>
               <Box sx={{ 
@@ -269,42 +274,38 @@ export function ReferralSyncCard() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {data?.trades.map((trade, index) => (
-                      <TableRow key={`${trade.accountId}-${index}`} hover>
+                    {data.map((trade, index) => (
+                      <TableRow key={`${trade.ticket}-${index}`} hover>
                         <TableCell>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {trade.accountId.slice(0, 4)}XXXX{trade.accountId.slice(-2)}
+                            {trade.accountId.replace('MT5_', '')}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                            {trade.email}
-                          </Typography>
+                          {trade.userEmail && (
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                              {trade.userEmail}
+                            </Typography>
+                          )}
                         </TableCell>
                         {!isMobile && (
                           <TableCell align="right">
                             <Typography variant="caption">
-                              {formatDate(trade.date)}
+                              {formatDate(trade.time)}
                             </Typography>
                           </TableCell>
                         )}
                         <TableCell align="right">
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: trade.status === 'success' ? 'success.main' : 'text.disabled' }}>
-                            ${trade.amount.toFixed(2)}
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>
+                            ${Math.abs(trade.netProfit).toFixed(2)}
                           </Typography>
                         </TableCell>
                         <TableCell align="center">
-                          {trade.status === 'success' ? (
-                            <Tooltip title="ซิงค์สำเร็จ">
-                              <SuccessIcon color="success" fontSize="small" />
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title={trade.error ?? "เกิดข้อผิดพลาด"}>
-                              <ErrorIcon color="error" fontSize="small" />
-                            </Tooltip>
-                          )}
+                          <Tooltip title="ซิงค์สำเร็จ">
+                            <SuccessIcon color="success" fontSize="small" />
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}
-                    {(!data?.trades || data.trades.length === 0) && (
+                    {(!data || data.length === 0) && (
                       <TableRow>
                         <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
                           <Typography variant="body2" sx={{ color: 'text.secondary' }}>

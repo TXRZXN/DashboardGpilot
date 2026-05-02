@@ -33,7 +33,8 @@ export function ApiHealthProvider({ children }: ApiHealthProviderProps) {
 
   const IS_MOCK_MODE = process.env.NEXT_PUBLIC_IS_MOCK_MODE === "True" || process.env.NEXT_PUBLIC_IS_MOCK_MODE === "true";
 
-  // Mock Auth Initialization
+  /* 
+  // Mock Auth Initialization (Disabled - เก็บไว้เป็นตัวอย่างการใช้งาน)
   useEffect(() => {
     if (IS_MOCK_MODE) {
       if (typeof window !== "undefined") {
@@ -48,6 +49,7 @@ export function ApiHealthProvider({ children }: ApiHealthProviderProps) {
       }
     }
   }, [IS_MOCK_MODE]);
+  */
 
   const checkHealth = useCallback(async () => {
     setIsChecking(true);
@@ -59,8 +61,9 @@ export function ApiHealthProvider({ children }: ApiHealthProviderProps) {
       ]);
       
       // ในโหมด Mock ให้ถือว่า Healthy เสมอเพื่อให้ UI ไม่ค้าง
-      setIsMainHealthy(IS_MOCK_MODE ? true : (mainRes.success && mainRes.data.status === "ok"));
-      setIsSubHealthy(IS_MOCK_MODE ? true : (subRes.success && subRes.data.api === "up"));
+      // ปรับปรุงให้ยืดหยุ่นขึ้น: ยอมรับทั้ง status === "ok" หรือ api === "up/ok"
+      setIsMainHealthy(IS_MOCK_MODE ? true : (mainRes.success && (mainRes.data.status === "ok" || mainRes.data.api === "up")));
+      setIsSubHealthy(IS_MOCK_MODE ? true : (subRes.success && (subRes.data.api === "up" || subRes.data.status === "ok" || subRes.data.api === "ok")));
     } catch (err) {
       logger.error("API Health check failed unexpectedly in provider", err instanceof Error ? err : String(err));
       if (!IS_MOCK_MODE) {
@@ -73,10 +76,17 @@ export function ApiHealthProvider({ children }: ApiHealthProviderProps) {
     }
   }, [IS_MOCK_MODE]);
 
-  // ยิง Health Check ทุกครั้งที่เปลี่ยนหน้าจอ (ยกเว้นหน้า ROR)
+  // ยิง Health Check เฉพาะในหน้าหลัก (Dashboard, Wallet, Account, History, Clients)
+  // ข้ามในหน้า Product Detail และ ROR เพื่อลดจำนวน Request (ตาม User Request)
   useEffect(() => {
-    if (pathname?.includes("record-of-ragnarok")) return;
-    checkHealth();
+    const mainPaths = ["/dashboard", "/wallet", "/account", "/history", "/clients"];
+    const shouldCheck = mainPaths.some(path => pathname === path || pathname?.startsWith(path + "/")) && 
+                        !pathname?.includes("product-detail") && 
+                        !pathname?.includes("record-of-ragnarok");
+
+    if (shouldCheck) {
+      checkHealth();
+    }
   }, [pathname, checkHealth]);
 
   const apiHealthValue = React.useMemo(
