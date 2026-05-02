@@ -187,10 +187,11 @@ export const AuthService = {
   /**
    * เปลี่ยนรหัสผ่าน MT5 (พร้อมเข้ารหัสก่อนส่ง)
    * 
+   * @param mt5Id - รหัส MT5 ID
    * @param newPlainPassword - รหัสผ่าน MT5 แบบ plain text
    * @returns ServiceResponse แจ้งผลการดำเนินการ
    */
-  updateMT5Password: async (newPlainPassword: string): Promise<ServiceResponse<void>> => {
+  updateMT5Password: async (mt5Id: number, newPlainPassword: string): Promise<ServiceResponse<void>> => {
     try {
       logger.info('Updating MT5 password');
       const encryptionKey = process.env.NEXT_PUBLIC_MT5_ENCRYPTION_KEY || '';
@@ -205,7 +206,7 @@ export const AuthService = {
       const encryptedPassword = await CryptoUtils.encrypt(newPlainPassword, encryptionKey);
       const response = await apiClient<ServiceResponse<{ message: string }>>(SUB_ENDPOINTS.AUTH_UPDATE_MT5_PASSWORD, {
         method: 'PATCH',
-        body: JSON.stringify({ encrypted_password: encryptedPassword }),
+        body: JSON.stringify({ mt5Id, encryptedPassword }),
       }, undefined, API_GATEWAY_SUB);
 
       if (!response.success) return { success: false, data: undefined, error: response.error };

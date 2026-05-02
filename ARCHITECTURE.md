@@ -117,6 +117,9 @@ Hooks use `useQuery` to wrap async service calls, returning a standardized inter
 4. ผู้ใช้ตั้งรหัสผ่านใหม่ → `AuthService.updatePassword(newPass)`
 5. เมื่อเปลี่ยนสำเร็จ Backend จะปลดแฟล็กและคืน Access Token ตัวจริงให้ใช้งาน
 
+### 4. Multi-Port Management (1:N Architecture)
+- **MT5 Password Updates**: Since users can have multiple MT5 accounts (`Mt5Account`), the frontend `AuthService.updateMT5Password(mt5Id, newPlainPassword)` targets an individual port by supplying the `mt5Id` to the backend, which manages it via a composite identifier (`user_id + mt5_id`).
+
 ---
 
 ## 🔐 Token Lifecycle (Reactive Auth)

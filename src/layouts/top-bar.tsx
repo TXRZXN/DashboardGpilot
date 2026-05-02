@@ -27,6 +27,7 @@ import {
     Logout as LogoutIcon,
     Person as PersonIcon,
     PersonAdd as PersonAddIcon,
+    PostAdd as PostAddIcon,
 } from "@mui/icons-material";
 import { useThemeMode } from "@/shared/ui/theme-provider";
 import { useAuth } from "@/shared/providers/auth-provider";
@@ -126,6 +127,13 @@ export function TopBar() {
                                         <ListItemText>
                                             {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
                                         </ListItemText>
+                                    </MenuItem>
+
+                                    <MenuItem onClick={() => { router.push("/add-port"); handleMenuClose(); }}>
+                                        <ListItemIcon>
+                                            <PostAddIcon fontSize="small" />
+                                        </ListItemIcon>
+                                        <ListItemText>Add Port</ListItemText>
                                     </MenuItem>
 
                                     <MenuItem onClick={() => { router.push("/register"); handleMenuClose(); }}>

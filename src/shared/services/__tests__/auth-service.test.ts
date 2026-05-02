@@ -107,12 +107,15 @@ describe('AuthService', () => {
     it('updateMT5Password_Successful_CallsApiWithEncryptedPassword', async () => {
       vi.mocked(apiClient).mockResolvedValue({ success: true, data: { message: 'ok' }, error: null });
 
-      const result = await AuthService.updateMT5Password('new-pass');
+      const result = await AuthService.updateMT5Password(12345, 'new-pass');
 
       expect(CryptoUtils.encrypt).toHaveBeenCalledWith('new-pass', MOCK_ENCRYPTION_KEY);
       expect(apiClient).toHaveBeenCalledWith(
         SUB_ENDPOINTS.AUTH_UPDATE_MT5_PASSWORD,
-        expect.anything(),
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ mt5Id: 12345, encryptedPassword: MOCK_ENCRYPTED_PASS })
+        }),
         undefined,
         API_GATEWAY_SUB
       );

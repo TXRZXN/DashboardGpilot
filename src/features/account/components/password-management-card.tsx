@@ -27,6 +27,7 @@ import { AuthService } from "@/shared/services/auth-service";
 export function PasswordManagementCard() {
   const [webPassword, setWebPassword] = useState("");
   const [mt5Password, setMt5Password] = useState("");
+  const [mt5Id, setMt5Id] = useState("");
   const [showWebPass, setShowWebPass] = useState(false);
   const [showMt5Pass, setShowMt5Pass] = useState(false);
   const [loading, setLoading] = useState<"web" | "mt5" | null>(null);
@@ -47,14 +48,15 @@ export function PasswordManagementCard() {
   };
 
   const handleUpdateMt5Password = async () => {
-    if (!mt5Password) return;
+    if (!mt5Password || !mt5Id) return;
     setLoading("mt5");
     setStatus(null);
-    const result = await AuthService.updateMT5Password(mt5Password);
+    const result = await AuthService.updateMT5Password(Number(mt5Id), mt5Password);
     setLoading(null);
     if (result.success) {
       setStatus({ type: "success", message: "เปลี่ยนรหัสผ่าน MT5 สำเร็จแล้ว" });
       setMt5Password("");
+      setMt5Id("");
     } else {
       setStatus({ type: "error", message: result.error?.message ?? "เปลี่ยนรหัสผ่าน MT5 ไม่สำเร็จ" });
     }
@@ -138,11 +140,22 @@ export function PasswordManagementCard() {
               <TextField
                 fullWidth
                 size="small"
+                type="text"
+                placeholder="ระบุ MT5 ID"
+                value={mt5Id}
+                onChange={(e) => setMt5Id(e.target.value)}
+                autoComplete="off"
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                fullWidth
+                size="small"
                 type={showMt5Pass ? "text" : "password"}
                 placeholder="ระบุรหัสผ่าน MT5 ใหม่"
                 value={mt5Password}
                 onChange={(e) => setMt5Password(e.target.value)}
                 autoComplete="off"
+                sx={{ flex: 2 }}
                 slotProps={{
                   input: {
                     endAdornment: (
@@ -163,7 +176,7 @@ export function PasswordManagementCard() {
               <Button 
                 variant="outlined" 
                 onClick={handleUpdateMt5Password}
-                disabled={!mt5Password || !!loading}
+                disabled={!mt5Password || !mt5Id || !!loading}
                 sx={{ minWidth: 120, borderRadius: 2 }}
               >
                 {loading === "mt5" ? <CircularProgress size={24} /> : "อัปเดต MT5"}
