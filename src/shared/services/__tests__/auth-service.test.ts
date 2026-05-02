@@ -93,7 +93,7 @@ describe('AuthService', () => {
         SUB_ENDPOINTS.AUTH_LOGIN,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ email: 'test@example.com', password: 'pass' })
+          body: JSON.stringify({ email: 'test@example.com', password: MOCK_ENCRYPTED_PASS })
         }),
         undefined,
         API_GATEWAY_SUB
@@ -117,6 +117,82 @@ describe('AuthService', () => {
         API_GATEWAY_SUB
       );
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe('updatePassword', () => {
+    it('updatePassword_Successful_CallsApiWithEncryptedPassword', async () => {
+      vi.mocked(apiClient).mockResolvedValue({ success: true, data: { message: 'ok' }, error: null });
+
+      const result = await AuthService.updatePassword('new-web-pass');
+
+      expect(CryptoUtils.encrypt).toHaveBeenCalledWith('new-web-pass', MOCK_ENCRYPTION_KEY);
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.AUTH_UPDATE_PASSWORD,
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ new_password: MOCK_ENCRYPTED_PASS })
+        }),
+        undefined,
+        API_GATEWAY_SUB
+      );
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('refreshToken', () => {
+    const mockLocalStorage = (() => {
+      let store: Record<string, string> = {};
+      return {
+        getItem: (key: string) => store[key] || null,
+        setItem: (key: string, value: string) => { store[key] = value; },
+        removeItem: (key: string) => { delete store[key]; },
+        clear: () => { store = {}; }
+      };
+    })();
+
+    beforeEach(() => {
+      Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
+      mockLocalStorage.clear();
+      // Mock cookie
+      document.cookie = "";
+    });
+
+    it('refreshToken_Successful_UpdatesLocalStorageAndCookies', async () => {
+      mockLocalStorage.setItem('refresh_token', 'old-refresh');
+      const mockRefreshResponse = {
+        success: true,
+        data: { accessToken: 'new-access', refreshToken: 'new-refresh', tokenType: 'bearer' },
+        error: null
+      };
+      vi.mocked(apiClient).mockResolvedValue(mockRefreshResponse);
+
+      const result = await AuthService.refreshToken();
+
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.AUTH_REFRESH,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ refreshToken: 'old-refresh' })
+        }),
+        undefined,
+        API_GATEWAY_SUB
+      );
+      expect(result.success).toBe(true);
+      expect(mockLocalStorage.getItem('auth_token')).toBe('new-access');
+      expect(mockLocalStorage.getItem('refresh_token')).toBe('new-refresh');
+      expect(document.cookie).toContain('auth_token=new-access');
+    });
+
+    it('refreshToken_Failed_ClearsTokensAndLogout', async () => {
+      mockLocalStorage.setItem('refresh_token', 'bad-refresh');
+      vi.mocked(apiClient).mockResolvedValue({ success: false, data: null, error: { code: 'EXPIRED', message: 'fail' } });
+
+      const result = await AuthService.refreshToken();
+
+      expect(result.success).toBe(false);
+      expect(mockLocalStorage.getItem('auth_token')).toBeNull();
+      expect(mockLocalStorage.getItem('refresh_token')).toBeNull();
     });
   });
 });

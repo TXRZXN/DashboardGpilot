@@ -50,15 +50,16 @@ describe('AnalyticsService', () => {
       expect(result.data).toEqual(mockData);
     });
 
-    it('getProductDetail_WithNonGpilot_ReturnsMockDataWithoutApiCall', async () => {
-      const nonGpilotBase = '/api/gateway/safegrow';
-      
-      const result = await AnalyticsService.getProductDetail(undefined, nonGpilotBase);
+    it('getProductDetail_WithOtherService_CallsApiClientWithBase', async () => {
+      const otherBase = '/api/gateway/safegrow';
+      const mockData = { timeline: [] } as any;
+      vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockData, error: null });
 
-      // Should not call apiClient for non-gpilot services (mock mode)
-      expect(apiClient).not.toHaveBeenCalled();
+      const result = await AnalyticsService.getProductDetail(undefined, otherBase);
+
+      expect(apiClient).toHaveBeenCalledWith(ENDPOINTS.PRODUCT_DETAIL, undefined, undefined, otherBase);
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(MOCK_PRODUCT_DETAIL);
+      expect(result.data).toEqual(mockData);
     });
   });
 });

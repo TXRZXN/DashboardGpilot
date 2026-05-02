@@ -30,7 +30,7 @@ const TestComponent = () => {
 describe('ApiHealthProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(usePathname).mockReturnValue('/product-detail');
+    vi.mocked(usePathname).mockReturnValue('/dashboard');
   });
 
   it('ApiHealthProvider_SuccessfulCheck_SetsIsHealthyTrue', async () => {

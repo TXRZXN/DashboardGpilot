@@ -21,7 +21,7 @@ describe('TradeHistoryService', () => {
       const result = await TradeHistoryService.getReferralHistory();
 
       expect(apiClient).toHaveBeenCalledWith(
-        SUB_ENDPOINTS.TRADES,
+        SUB_ENDPOINTS.TRADES_REFERRALS,
         undefined,
         undefined,
         API_GATEWAY_SUB

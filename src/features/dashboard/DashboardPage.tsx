@@ -4,6 +4,7 @@ import { Box, Typography, Grid, Alert } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { ProductCard } from "./components/ProductCard";
 import { useDashboardData } from "./hooks/use-dashboard-data";
+import { useAuth } from "@/shared/providers/auth-provider";
 import { 
   SERVICE_BASE_GPILOT, 
   SERVICE_BASE_SAFEGROW, 
@@ -24,20 +25,12 @@ interface ProductInfo {
 }
 
 const PRODUCTS: Record<string, ProductInfo> = {
-  SAFEGROW: { id: 'safegrow', title: 'Safe Grow', initials: 'SG', serviceBase: SERVICE_BASE_SAFEGROW },
-  GPILOT: { id: 'gpilot', title: 'Gpilot', initials: 'GP', serviceBase: SERVICE_BASE_GPILOT },
-  HQULTIMATE: { id: 'HQUltimate', title: 'HQUltimate', initials: 'HQ', serviceBase: SERVICE_BASE_HQULTIMATE },
-  PPVP: { id: 'ppvp', title: 'PPVP', initials: 'PP', serviceBase: SERVICE_BASE_PPVP },
-  GOLDENBOY: { id: 'goldenboy', title: 'GoldenBoy', initials: 'GB', serviceBase: SERVICE_BASE_GOLDENBOY },
+  safegrow: { id: 'safegrow', title: 'Safe Grow', initials: 'SG', serviceBase: SERVICE_BASE_SAFEGROW },
+  gpilot: { id: 'gpilot', title: 'Gpilot', initials: 'GP', serviceBase: SERVICE_BASE_GPILOT },
+  hqultimate: { id: 'hqultimate', title: 'hqultimate', initials: 'HQ', serviceBase: SERVICE_BASE_HQULTIMATE },
+  ppvp: { id: 'ppvp', title: 'PPVP', initials: 'PP', serviceBase: SERVICE_BASE_PPVP },
+  goldenboy: { id: 'goldenboy', title: 'GoldenBoy', initials: 'GB', serviceBase: SERVICE_BASE_GOLDENBOY },
 };
-
-const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
-  'A': ['SAFEGROW', 'GPILOT', 'HQULTIMATE'],
-  'B': ['PPVP', 'GOLDENBOY', 'HQULTIMATE'],
-  'Admin': ['SAFEGROW', 'GPILOT', 'HQULTIMATE', 'PPVP', 'GOLDENBOY'],
-};
-
-const MOCK_ROLE: AppRole = 'Admin';
 
 // --- Sub-components ---
 
@@ -74,9 +67,13 @@ function DashboardCard({
 
 export function DashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
   
-  const allowedProductKeys = ROLE_PERMISSIONS[MOCK_ROLE] || [];
-  const visibleProducts = allowedProductKeys.map(key => PRODUCTS[key]);
+  if (!user) return null; // สามารถเพิ่ม Loading Skeleton ที่นี่ได้
+
+  const visibleProducts = user.menu.dashboard
+    .map(key => PRODUCTS[key.toLowerCase()])
+    .filter(Boolean);
 
   const handleCardClick = (productName: string, serviceBase: string) => {
     // ส่งข้อมูลไปกับ URL เพื่อให้หน้า Detail ใช้ยิง API ถูกเส้น
@@ -114,7 +111,7 @@ export function DashboardPage() {
             textTransform: 'uppercase'
           }}
         >
-          Role: {MOCK_ROLE}
+          Role: {user.role}
         </Typography>
       </Box>
 

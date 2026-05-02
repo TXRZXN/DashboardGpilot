@@ -33,7 +33,7 @@ async function handleRequest(
       safegrow: process.env.API_URL,
       ppvp: process.env.API_URL,
       goldenboy: process.env.API_URL,
-      HQUltimate: process.env.API_URL,
+      hqultimate: process.env.API_URL,
       ror: process.env.API_URL_STKPRO,
       sub: process.env.API_URL_SUB,
       main: process.env.API_URL_MAIN || process.env.API_URL,

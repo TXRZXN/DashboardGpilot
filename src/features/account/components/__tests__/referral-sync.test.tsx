@@ -35,29 +35,32 @@ const renderWithTheme = (ui: React.ReactElement) => {
 };
 
 describe('ReferralSyncCard', () => {
-  const mockData = {
-    totalThisWeek: 100.50,
-    lastSync: new Date().toISOString(),
-    trades: [
-      {
-        email: 'test@example.com',
-        accountId: '12345678',
-        amount: 50.25,
-        currency: 'USD',
-        date: new Date().toISOString(),
-        status: 'success'
-      },
-      {
-        email: 'fail@example.com',
-        accountId: '87654321',
-        amount: 0,
-        currency: 'USD',
-        date: new Date().toISOString(),
-        status: 'failed',
-        error: 'Login Failed'
-      }
-    ]
-  };
+  const mockData = [
+    {
+      ticket: 1,
+      time: new Date().toISOString(),
+      type: 1,
+      lots: 0.1,
+      symbol: 'EURUSD',
+      price: 1.1,
+      netProfit: 50.25,
+      comment: 'Referral Share',
+      accountId: 'MT5_12345678',
+      userEmail: 'test@example.com'
+    },
+    {
+      ticket: 2,
+      time: new Date().toISOString(),
+      type: 1,
+      lots: 0.1,
+      symbol: 'EURUSD',
+      price: 1.1,
+      netProfit: 50.25,
+      comment: 'Referral Share',
+      accountId: 'MT5_87654321',
+      userEmail: 'fail@example.com'
+    }
+  ];
 
   beforeEach(() => {
     vi.clearAllMocks();

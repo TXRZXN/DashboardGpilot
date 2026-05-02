@@ -3,7 +3,7 @@
  */
 export const SERVICE_BASE_GPILOT = "/api/gateway/gpilot";
 export const SERVICE_BASE_SAFEGROW = "/api/gateway/safegrow";
-export const SERVICE_BASE_HQULTIMATE = "/api/gateway/HQUltimate";
+export const SERVICE_BASE_HQULTIMATE = "/api/gateway/hqultimate";
 export const SERVICE_BASE_PPVP = "/api/gateway/ppvp";
 export const SERVICE_BASE_GOLDENBOY = "/api/gateway/goldenboy";
 export const SERVICE_BASE_ROR = "/api/gateway/ror";

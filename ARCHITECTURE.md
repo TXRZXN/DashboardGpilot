@@ -13,7 +13,7 @@ graph TD
     
     Frontend -->|Bearer Token| GpilotAPI[Gpilot Service]
     Frontend -->|Bearer Token| SafegrowAPI[Safegrow Service]
-    Frontend -->|Bearer Token| HQUltimateAPI[HQUltimate Service]
+    Frontend -->|Bearer Token| hqultimateAPI[hqultimate Service]
     Frontend -->|Bearer Token| CoreAPI
     
     GpilotAPI -->|Verifies JWT| MT5[MetaTrader 5]
@@ -57,9 +57,9 @@ The application implements a frontend-gated RBAC system to manage product visibi
 
 | Role | Access Permissions |
 | :--- | :--- |
-| **Admin** | Access to all products (Gpilot, Safegrow, HQUltimate, PPVP, GoldenBoy) |
-| **Role A** | Access to Safe Grow, Gpilot, and HQUltimate |
-| **Role B** | Access to PPVP, GoldenBoy, and HQUltimate |
+| **Admin** | Access to all products (Gpilot, Safegrow, hqultimate, PPVP, GoldenBoy) |
+| **Role A** | Access to Safe Grow, Gpilot, and hqultimate |
+| **Role B** | Access to PPVP, GoldenBoy, and hqultimate |
 
 Visibility is controlled via `ROLE_PERMISSIONS` in `DashboardPage.tsx`, ensuring users only see relevant products on their dashboard.
 
@@ -107,14 +107,54 @@ Hooks use `useQuery` to wrap async service calls, returning a standardized inter
 
 1. User selects a product, navigating to `/product-detail?base=...`.
 2. `ProductDetailPage` fetches primary metrics (blocking).
-3. Simultaneously, `TradeHistoryService.getHistory()` is triggered in the **background** to update the database state without blocking the UI.
+3. Simultaneously, `TradeHistoryService.getHistory()` คือการดึงข้อมูลจาก MT5 มาบันทึกลง MongoDB ใน Backend เพื่อให้ข้อมูลเป็นปัจจุบันที่สุด
+
+### 3. Mandatory Password Change Flow (Security)
+
+1. ผู้ใช้ทำการ Login ครั้งแรกด้วยรหัสผ่านชั่วคราว
+2. Backend ตอบกลับมาพร้อมแฟล็ก `requirePasswordChange: true`
+3. Frontend (ผ่าน Logic ในหน้า Login หรือ Middleware) ตรวจพบแฟล็กนี้ และทำการ Redirect ผู้ใช้ไปยังหน้า `/change-password`
+4. ผู้ใช้ตั้งรหัสผ่านใหม่ → `AuthService.updatePassword(newPass)`
+5. เมื่อเปลี่ยนสำเร็จ Backend จะปลดแฟล็กและคืน Access Token ตัวจริงให้ใช้งาน
+
+---
+
+## 🔐 Token Lifecycle (Reactive Auth)
+
+เราใช้ระบบ **Silent Refresh** เพื่อจัดการ Session ของผู้ใช้:
+1. **Access Token**: อายุสั้น (เช่น 15-60 นาที) เก็บใน Memory/Cookie
+2. **Refresh Token**: อายุยาว (เช่น 7 วัน) เก็บใน LocalStorage/Secure Cookie
+3. **apiClient Interceptor**: เมื่อเจอ `401 Unauthorized` ระบบจะหยุด Request นั้นไว้ชั่วคราว และเรียก `/auth/refresh` อัตโนมัติ
+4. เมื่อได้ Token ใหม่มา ระบบจะทำการ **Retry** Request เดิมให้ทันที โดยที่ผู้ใช้ไม่รู้สึกตัว (Seamless UX)
 
 ---
 
 ## 📡 Observability Strategy
 
-- **Structured Logging**: All logs follow a JSON format for better observability.
-- **Trace IDs**: Distributed tracing enabled via `X-Trace-ID` headers across all service calls.
+เพื่อให้ระบบมีความโปร่งใสและตรวจสอบได้ (Transparent & Traceable) เราได้วางโครงสร้างไว้ดังนี้:
+
+### 1. Centralized Logger
+ทุก Component และ Service จะใช้ `createLogger` จาก `shared/utils/logger` ซึ่งเบื้องหลังคือ **Pino**:
+- มีการแนบ `context` (เช่น user_id, service_name) ไปกับทุกล็อก
+- รองรับการปิดล็อกใน Production เพื่อลด Performance overhead ยกเว้นระดับ `ERROR`
+
+### 2. Distributed Tracing
+`apiClient` จะสร้างหรือรับ `X-Trace-ID` จากต้นทางและส่งต่อไปยัง API ทุกตัว:
+- ทำให้สามารถค้นหา Log ในฝั่ง Backend ที่มี Trace ID เดียวกันได้เมื่อเกิดปัญหา
+- ใช้ `crypto.randomUUID()` ในการสร้าง Trace ID สำหรับ Request ใหม่
+
+### 3. Error Contract
+เราใช้มาตรฐาน Error เดียวกันทั้งระบบ:
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable message",
+    "details": []
+  }
+}
+```
 
 ---
 

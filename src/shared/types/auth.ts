@@ -37,6 +37,13 @@ export interface LoginResponse {
     email: string;
     role: string;
     requirePasswordChange?: boolean;
+    menu: {
+      dashboard: string[];
+      setting: {
+        masterAdmin: boolean;
+        Admin: boolean;
+      } | null;
+    };
   };
 }
 
@@ -51,6 +58,13 @@ export interface UserSession {
     email: string;
     role: string;
     requirePasswordChange?: boolean;
+    menu: {
+      dashboard: string[];
+      setting: {
+        masterAdmin: boolean;
+        Admin: boolean;
+      } | null;
+    };
   };
   isAuthenticated: boolean;
 }

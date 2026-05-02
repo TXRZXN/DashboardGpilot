@@ -20,6 +20,10 @@ const logger = createLogger('AuthService');
 export const AuthService = {
   /**
    * ลงทะเบียนผู้ใช้ใหม่ (พร้อมเข้ารหัสรหัสผ่าน MT5)
+   * 
+   * @param data - ข้อมูลการลงทะเบียน (email, mt5Id, mt5_password_plain)
+   * @returns ServiceResponse พร้อมข้อมูล RegistrationResponse
+   * @throws CONFIG_ERROR หากไม่ได้ตั้งค่า Encryption Key
    */
   register: async (
     data: Omit<RegistrationRequest, 'mt5PasswordEncrypted'> & { mt5_password_plain: string }
@@ -76,15 +80,31 @@ export const AuthService = {
 
   /**
    * เข้าสู่ระบบ (คืนค่า Token และข้อมูลผู้ใช้)
+   * รองรับการเข้ารหัสรหัสผ่านก่อนส่งไปยัง Backend เพื่อความปลอดภัย
+   * 
+   * @param data - ข้อมูลการเข้าสู่ระบบ (email, password)
+   * @returns ServiceResponse พร้อม Access Token และข้อมูลผู้ใช้
    */
   login: async (data: LoginRequest): Promise<ServiceResponse<LoginResponse>> => {
     try {
       logger.info('Attempting login', { email: data.email });
 
+      // Phase 4: Encrypt password before sending to backend
+      let passwordToSend = data.password;
+      const encryptionKey = process.env.NEXT_PUBLIC_MT5_ENCRYPTION_KEY || '';
+      
+      if (encryptionKey) {
+        try {
+          passwordToSend = await CryptoUtils.encrypt(data.password, encryptionKey);
+        } catch (err) {
+          logger.warn('Frontend encryption failed, falling back to plain text', { error: err });
+        }
+      }
+
       // Backend-Sub ใช้ JSON สำหรับ login
       const requestBody: LoginRequest = {
         email: data.email,
-        password: data.password
+        password: passwordToSend
       };
 
       const response = await apiClient<ServiceResponse<LoginResponse>>(SUB_ENDPOINTS.AUTH_LOGIN, {
@@ -123,14 +143,31 @@ export const AuthService = {
   },
 
   /**
-   * เปลี่ยนรหัสผ่านเว็บ
+   * เปลี่ยนรหัสผ่านสำหรับเข้าเว็บไซต์ (Web Password)
+   * ใช้ในกรณีบังคับเปลี่ยนรหัสผ่านครั้งแรก หรือผู้ใช้เปลี่ยนเอง
+   * 
+   * @param newPassword - รหัสผ่านใหม่ที่ต้องการตั้ง
+   * @returns ServiceResponse แจ้งผลการดำเนินการ
    */
   updatePassword: async (newPassword: string): Promise<ServiceResponse<void>> => {
     try {
       logger.info('Updating web password');
+      
+      // Phase 4: Encrypt password before sending
+      let passwordToSend = newPassword;
+      const encryptionKey = process.env.NEXT_PUBLIC_MT5_ENCRYPTION_KEY || '';
+      
+      if (encryptionKey) {
+        try {
+          passwordToSend = await CryptoUtils.encrypt(newPassword, encryptionKey);
+        } catch (err) {
+          logger.warn('Failed to encrypt web password, sending plain text', { error: err });
+        }
+      }
+
       const response = await apiClient<ServiceResponse<{ message: string }>>(SUB_ENDPOINTS.AUTH_UPDATE_PASSWORD, {
         method: 'PATCH',
-        body: JSON.stringify({ new_password: newPassword }),
+        body: JSON.stringify({ new_password: passwordToSend }),
       }, undefined, API_GATEWAY_SUB);
 
       if (!response.success) return { success: false, data: undefined, error: response.error };
@@ -148,7 +185,10 @@ export const AuthService = {
   },
 
   /**
-   * เปลี่ยนรหัสผ่าน MT5 (พร้อมเข้ารหัส)
+   * เปลี่ยนรหัสผ่าน MT5 (พร้อมเข้ารหัสก่อนส่ง)
+   * 
+   * @param newPlainPassword - รหัสผ่าน MT5 แบบ plain text
+   * @returns ServiceResponse แจ้งผลการดำเนินการ
    */
   updateMT5Password: async (newPlainPassword: string): Promise<ServiceResponse<void>> => {
     try {
@@ -183,7 +223,10 @@ export const AuthService = {
   },
 
   /**
-   * ขอ Access Token ใหม่ด้วย Refresh Token
+   * ขอ Access Token ใหม่โดยใช้ Refresh Token
+   * ปฏิบัติตามมาตรฐาน Reactive Token Refresh
+   * 
+   * @returns ServiceResponse พร้อม Access Token ตัวใหม่
    */
   refreshToken: async (): Promise<ServiceResponse<LoginResponse>> => {
     try {
