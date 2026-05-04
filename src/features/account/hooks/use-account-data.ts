@@ -62,10 +62,9 @@ export function useAccountData(tableParams?: TradeRequest) {
       const tradesRes = await AnalyticsService.getGroupedTrades({
         page: tableParams?.page || 1,
         limit: tableParams?.limit || 10,
-        symbol: tableParams?.symbol || null,
         type: tableParams?.type || null,
-        from_date: tableParams?.from_date || null,
-        to_date: tableParams?.to_date || null,
+        date_from: tableParams?.date_from || null,
+        end_date: tableParams?.end_date || null,
       }, API_GATEWAY_SUB);
 
       if (tradesRes.success && tradesRes.data) {

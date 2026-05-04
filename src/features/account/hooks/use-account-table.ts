@@ -5,7 +5,6 @@ export type AccountTradeType = "ALL" | "Trade" | "Deposit" | "ProfitShare" | "Wi
 export function useAccountTable() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [symbolFilter, setSymbolFilter] = useState("");
     const [typeFilter, setTypeFilter] = useState<AccountTradeType>("ALL");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -15,8 +14,6 @@ export function useAccountTable() {
         setPage,
         rowsPerPage,
         setRowsPerPage,
-        symbolFilter,
-        setSymbolFilter,
         typeFilter,
         setTypeFilter,
         startDate,

@@ -210,11 +210,20 @@ export interface AccountFinance {
 // Grouped Deal (Round-Turn Position)
 // ---------------------------------------------
 
+/**
+ * ข้อมูล Trade รายการย่อย (ตาม Backend-Sub GroupedDeal schema v3)
+ * - Required: time, type, netProfit, balance (Backend-Sub /account/trades)
+ * - Optional: fields เพิ่มเติมสำหรับ full variant (Backend-Main /history)
+ */
 export interface GroupedDeal {
+  readonly time: string;
+  readonly type: string;
+  readonly netProfit: number;
+  readonly balance: number;
+  // Optional fields — Backend-Main full trade data only
   readonly ticket?: number;
   readonly positionId?: number;
   readonly symbol?: string;
-  readonly type: string;
   readonly entry?: string | null;
   readonly volume?: number;
   readonly openPrice?: number;
@@ -223,13 +232,10 @@ export interface GroupedDeal {
   readonly commission?: number;
   readonly swap?: number;
   readonly fee?: number;
-  readonly netProfit: number;
   readonly reason?: string;
   readonly comment?: string;
   readonly openTime?: string;
   readonly closeTime?: string;
-  readonly time: string;
-  readonly balance: number;
 }
 
 /**
@@ -237,6 +243,7 @@ export interface GroupedDeal {
  */
 export interface GroupedTradesPage {
   readonly pageTrades: number;
+  readonly pageTotalPL: number;   // alias: "pagetotalP/L"
   readonly pageVolume: number;
   readonly pageGrossProfit: number;
   readonly pageGrossLoss: number;
@@ -248,6 +255,7 @@ export interface GroupedTradesPage {
 export interface GroupedTradesResponse {
   totalTrades: number;
   totalVolume: number;
+  totalPL: number;       // alias: "totalP/L"
   grossProfit: number;
   grossLoss: number;
   netProfit: number;

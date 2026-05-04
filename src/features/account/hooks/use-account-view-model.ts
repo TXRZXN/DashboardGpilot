@@ -11,15 +11,13 @@ export function useAccountViewModel() {
         () => ({
             page: tableState.page + 1,
             limit: tableState.rowsPerPage,
-            symbol: tableState.symbolFilter,
             type: tableState.typeFilter === "ALL" ? null : (tableState.typeFilter as string),
-            from_date: tableState.startDate,
-            to_date: tableState.endDate,
+            date_from: tableState.startDate || null,
+            end_date: tableState.endDate || null,
         }),
         [
             tableState.page,
             tableState.rowsPerPage,
-            tableState.symbolFilter,
             tableState.typeFilter,
             tableState.startDate,
             tableState.endDate,
