@@ -6,7 +6,7 @@ import { AnalyticsService } from "@/shared/services/analytics-service";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
 import type { GroupedDeal } from "@/shared/types/api";
 
-export type SortField = "symbol" | "netProfit" | "volume" | "closeTime" | "type";
+export type SortField = "symbol" | "netProfit" | "volume" | "closeTime" | "type" | "time" | "balance";
 export type SortDirection = "asc" | "desc";
 
 export interface HistoryTotals {

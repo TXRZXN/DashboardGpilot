@@ -3,7 +3,6 @@
 import { 
   Box, 
   Typography, 
-  Grid, 
   Card, 
   CardContent, 
   Divider, 
@@ -16,7 +15,7 @@ import {
   Person as PersonIcon, 
   CheckCircle as CheckCircleIcon 
 } from "@mui/icons-material";
-import type { AccountInfo } from "@/shared/types/api";
+import { InfoGrid } from "@/shared/ui";
 
 interface ProfileCardProps {
   readonly name: string;
@@ -37,6 +36,13 @@ export function ProfileCard({
   loading,
   sx
 }: Readonly<ProfileCardProps>) {
+  const profileItems = [
+    { label: "Account ID", value: `#${login || "-"}` },
+    { label: "Server", value: server || "-" },
+    { label: "Leverage", value: `1:${leverage || "-"}` },
+    { label: "Currency", value: currency || "-" },
+  ];
+
   return (
     <Card sx={{ borderRadius: 4, overflow: 'hidden', position: 'relative', ...sx }}>
       <Box sx={{ height: 100, bgcolor: 'primary.main', opacity: 0.1, position: 'absolute', top: 0, left: 0, right: 0 }} />
@@ -56,10 +62,10 @@ export function ProfileCard({
           </Avatar>
           <Box sx={{ mb: 1 }}>
             {loading ? (
-              <Skeleton width={200} height={32} />
+              <Skeleton width={160} height={32} />
             ) : (
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {loading ? <Skeleton width={200} /> : (name || "Trader Name")}
+                {name || "Trader Name"}
               </Typography>
             )}
             <Typography variant="caption" sx={{ color: "text.secondary", display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -70,24 +76,11 @@ export function ProfileCard({
         
         <Divider sx={{ mb: 2 }} />
         
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5, display: 'block' }}>Account ID</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>#{loading ? <Skeleton /> : (login || "-")}</Typography>
-          </Grid>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5, display: 'block' }}>Server</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{loading ? <Skeleton /> : (server || "-")}</Typography>
-          </Grid>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5, display: 'block' }}>Leverage</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>1:{loading ? <Skeleton /> : (leverage || "-")}</Typography>
-          </Grid>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5, display: 'block' }}>Currency</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{loading ? <Skeleton /> : (currency || "-")}</Typography>
-          </Grid>
-        </Grid>
+        <InfoGrid 
+          items={profileItems} 
+          loading={loading} 
+          columns={{ xs: 6 }} 
+        />
       </CardContent>
     </Card>
   );

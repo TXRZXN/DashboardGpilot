@@ -1,75 +1,150 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useTradeData } from "@/shared/providers/trade-data-provider";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { AccountService } from "@/shared/services/account-service";
-import { HealthService } from "@/shared/services/health-service";
+import { AnalyticsService } from "@/shared/services/analytics-service";
 import { API_GATEWAY_SUB } from "@/shared/api/endpoint";
 import { useApiHealth } from "@/shared/providers/api-health-provider";
-import type { AccountSummary } from "@/shared/types/api";
+import type { 
+  AccountProfile, 
+  AccountFinance, 
+  GroupedTradesResponse,
+  TradeRequest
+} from "@/shared/types/api";
 
-export function useAccountData() {
-  const { account, loading: globalLoading, error: globalError, refreshData: globalRefresh } = useTradeData();
+export function useAccountData(tableParams?: TradeRequest) {
   const { isHealthy } = useApiHealth();
 
-  const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [profile, setProfile] = useState<AccountProfile | null>(null);
+  const [finance, setFinance] = useState<AccountFinance | null>(null);
+  const [tradesData, setTradesData] = useState<GroupedTradesResponse | null>(null);
+  
   const [loading, setLoading] = useState(false);
+  const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    // Rely on Provider's isHealthy state instead of calling again
+  // Use a ref to track if initial data has been fetched to avoid double calls
+  const isInitialFetched = useRef(false);
+
+  // 1. Fetch Profile & Finance (Initial or Refresh)
+  const fetchAccountInfo = useCallback(async () => {
     if (!isHealthy) return;
     
-    setLoading(false);
-    setSummary(null);
+    setLoading(true);
+    try {
+      const [profileRes, financeRes] = await Promise.all([
+        AccountService.getProfile(),
+        AccountService.getFinance(),
+      ]);
+
+      if (profileRes.success && profileRes.data && profileRes.data.length > 0) {
+        setProfile(profileRes.data[0]);
+      }
+      if (financeRes.success && financeRes.data) {
+        setFinance(financeRes.data);
+      }
+      
+      if (!profileRes.success || !financeRes.success) {
+        setError(profileRes.error?.message || financeRes.error?.message || "Failed to fetch account info");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred while fetching account info.");
+    } finally {
+      setLoading(false);
+      isInitialFetched.current = true;
+    }
   }, [isHealthy]);
 
+  // 2. Fetch Trades (Independent)
+  const fetchTrades = useCallback(async () => {
+    if (!isHealthy) return;
+
+    setTableLoading(true);
+    try {
+      const tradesRes = await AnalyticsService.getGroupedTrades({
+        page: tableParams?.page || 1,
+        limit: tableParams?.limit || 10,
+        symbol: tableParams?.symbol || null,
+        type: tableParams?.type || null,
+        from_date: tableParams?.from_date || null,
+        to_date: tableParams?.to_date || null,
+      }, API_GATEWAY_SUB);
+
+      if (tradesRes.success && tradesRes.data) {
+        setTradesData(tradesRes.data);
+      } else if (!tradesRes.success) {
+        setError(tradesRes.error?.message || "Failed to fetch trades");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred while fetching trades.");
+    } finally {
+      setTableLoading(false);
+    }
+  }, [isHealthy, tableParams]);
+
+  // Initial load
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!isInitialFetched.current && isHealthy) {
+      fetchAccountInfo();
+    }
+  }, [isHealthy, fetchAccountInfo]);
+
+  // Table update load
+  useEffect(() => {
+    if (isHealthy) {
+      fetchTrades();
+    }
+  }, [isHealthy, fetchTrades]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: account?.currency || "USD",
+      currency: profile?.currency || "USD",
     }).format(value);
   };
 
-  // Simple Obfuscation: Encode ID with prefix to prevent plain text modification
-  const encodeReferral = (id: string | number) => {
-    try {
-      // Add GP- prefix before encoding to Base64 and strip padding for cleaner URL
-      return btoa(`GP-${id}`).replace(/=/g, "");
-    } catch {
-      return id.toString();
-    }
-  };
-
-  const [baseUrl, setBaseUrl] = useState("https://gpilotsystem.com");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setBaseUrl(window.location.origin);
-    }
-  }, []);
-
-  const referralUrl = `${baseUrl}/register?ref=${
-    summary?.login ? encodeReferral(summary.login) : "mock_ref_1234"
-  }`;
+  const summary = useMemo(() => {
+    if (!profile) return null;
+    return {
+      name: profile.name,
+      login: profile.mt5Id,
+      server: profile.server,
+      leverage: profile.leverage,
+      currency: profile.currency,
+      balance: profile.balance,
+      ...finance
+    };
+  }, [profile, finance]);
 
   return {
-    loading: loading || globalLoading,
-    error: error ?? globalError,
-    account,
-    summary, // Provide full summary if needed
-    realBalance: summary?.balance ?? 0,
-    grossTradeProfit: summary?.grossTradeProfit ?? 0,
-    totalDeposits: summary?.totalDeposits ?? 0,
-    totalWithdrawals: summary?.totalWithdrawals ?? 0,
-    totalProfitSharing: summary?.totalProfitSharing ?? 0,
-    netProfit: summary?.netProfit ?? 0,
+    loading,
+    tableLoading,
+    error,
+    summary,
+    profile,
+    finance,
+    trades: tradesData?.paginated?.list || [],
+    totalTrades: tradesData?.totalTrades || 0,
+    tradesTotals: {
+      volume: tradesData?.totalVolume || 0,
+      grossProfit: tradesData?.grossProfit || 0,
+      grossLoss: tradesData?.grossLoss || 0,
+      netPL: tradesData?.netProfit || 0,
+      commission: 0,
+      swap: 0,
+      fee: tradesData?.fee || 0,
+      totalTrades: tradesData?.totalTrades || 0
+    },
+    realBalance: (finance as any)?.totalBalance ?? profile?.balance ?? 0,
+    grossTradeProfit: finance?.grossTradeProfit ?? 0,
+    totalDeposits: finance?.totalDeposits ?? 0,
+    totalWithdrawals: finance?.totalWithdrawals ?? 0,
+    totalProfitSharing: finance?.totalProfitSharing ?? 0,
+    netProfit: finance?.netProfit ?? 0,
+    equityCurve: finance?.equityCurve || [],
     formatCurrency,
-    referralUrl,
     refreshData: async () => {
-      await Promise.all([globalRefresh(), fetchData()]);
+      await Promise.all([fetchAccountInfo(), fetchTrades()]);
     },
   };
 }
+
+

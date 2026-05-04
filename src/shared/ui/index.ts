@@ -11,3 +11,5 @@ export * from "./margin-gauge";
 export * from "./data-table";
 export * from "./risk-metrics";
 export * from "./pl-distribution";
+export * from "./info-display";
+export * from "./section-header";

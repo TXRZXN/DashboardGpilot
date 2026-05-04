@@ -177,28 +177,59 @@ export interface AccountSummary {
   readonly netProfit: number;
 }
 
+/**
+ * ข้อมูลสรุปรายพอร์ต (จาก Backend-Sub /account/profile)
+ */
+export interface AccountProfile {
+  readonly mt5Id: number;
+  readonly name: string;
+  readonly server: string;
+  readonly currency: string;
+  readonly balance: number;
+  readonly leverage: number;
+  readonly updatedAt: string;
+}
+
+/**
+ * ข้อมูลสถิติและการเงินภาพรวม (จาก Backend-Sub /account/finance)
+ */
+export interface AccountFinance {
+  readonly user_id: string;
+  readonly grossTradeProfit: number;
+  readonly totalDeposits: number;
+  readonly totalWithdrawals: number;
+  readonly totalProfitSharing: number;
+  readonly netProfit: number;
+  readonly totalBalance: number;
+  readonly totalTrades: number;
+  readonly equityCurve: EquityPoint[];
+  readonly updated_at: string;
+}
+
 // ---------------------------------------------
 // Grouped Deal (Round-Turn Position)
 // ---------------------------------------------
 
 export interface GroupedDeal {
-  readonly ticket: number;
-  readonly positionId: number;
-  readonly symbol: string;
-  readonly type: 'BUY' | 'SELL';
-  readonly entry: string;
-  readonly volume: number;
-  readonly openPrice: number;
-  readonly closePrice: number;
-  readonly profit: number;
-  readonly commission: number;
-  readonly swap: number;
-  readonly fee: number;
+  readonly ticket?: number;
+  readonly positionId?: number;
+  readonly symbol?: string;
+  readonly type: string;
+  readonly entry?: string | null;
+  readonly volume?: number;
+  readonly openPrice?: number;
+  readonly closePrice?: number;
+  readonly profit?: number;
+  readonly commission?: number;
+  readonly swap?: number;
+  readonly fee?: number;
   readonly netProfit: number;
-  readonly reason: string;
-  readonly comment: string;
-  readonly openTime: string;   // ISO 8601
-  readonly closeTime: string;  // ISO 8601
+  readonly reason?: string;
+  readonly comment?: string;
+  readonly openTime?: string;
+  readonly closeTime?: string;
+  readonly time: string;
+  readonly balance: number;
 }
 
 /**

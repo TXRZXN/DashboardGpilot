@@ -36,29 +36,46 @@ export const MAIN_ENDPOINTS = {
 } as const;
 
 /**
- * รายการ Endpoint ของ Backend-Sub (Auth & Sync)
+ * รายการ Endpoint ของ Backend-Sub (Auth & Sync) - V1 Structure
+ * หมายเหตุ: apiClient จะเติม /api/v1 ให้โดยอัตโนมัติ
  */
 export const SUB_ENDPOINTS = {
   /** เช็คสถานะ API และ Database */
   HEALTH: `/health`,
+  
+  // Auth Endpoints
   /** ลงทะเบียนผู้ใช้ใหม่ */
   AUTH_REGISTER: `/auth/register`,
   /** เข้าสู่ระบบ */
   AUTH_LOGIN: `/auth/login`,
+  /** ขอ Refresh Access Token */
+  AUTH_REFRESH: `/auth/refresh`,
   /** เปลี่ยนรหัสผ่านเว็บ */
   AUTH_UPDATE_PASSWORD: `/auth/password`,
   /** เปลี่ยนรหัสผ่าน MT5 */
   AUTH_UPDATE_MT5_PASSWORD: `/auth/mt5-password`,
+  
+  // Account Endpoints (Own Data)
+  /** ดึงข้อมูลสรุปบัญชี (Balance, Server, Currency) */
+  ACCOUNT_PROFILE: `/account/profile`,
+  /** ดึงข้อมูลการเงินและสถิติ (Finance, Equity Curve) */
+  ACCOUNT_FINANCE: `/account/finance`,
   /** ดึงข้อมูลเทรดที่ Sync แล้ว (ของตัวเอง) */
-  TRADES: `/trades`,
-  /** ดึงข้อมูลเทรดที่ Sync แล้ว (ของ Referral) */
-  TRADES_REFERRALS: `/trades/referrals`,
+  ACCOUNT_TRADES: `/account/trades`,
   /** สั่ง Sync ข้อมูลการเทรดของตัวเอง (Manual) */
-  TRADES_SYNC_ME: `/trades/sync/me`,
+  ACCOUNT_SYNC: `/account/sync`,
+  
+  // Referral Endpoints (Team Data)
+  /** ดึงข้อมูลเทรดที่ Sync แล้ว (ของ Referral) */
+  REFERRAL_TRADES: `/referral/trades`,
   /** สั่ง Sync ข้อมูลการเทรด Referral (Manual) */
-  TRADES_SYNC_REFERRALS: `/trades/sync/referrals`,
-  /** ขอ Refresh Access Token */
-  AUTH_REFRESH: `/auth/refresh`,
+  REFERRAL_SYNC: `/referral/sync`,
+
+  // --- Legacy Mappings (For backward compatibility) ---
+  TRADES: `/account/trades`,
+  TRADES_REFERRALS: `/referral/trades`,
+  TRADES_SYNC_ME: `/account/sync`,
+  TRADES_SYNC_REFERRALS: `/referral/sync`,
 } as const;
 
 /**

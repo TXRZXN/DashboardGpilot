@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AccountService } from '../account-service';
 import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoint';
-import type { AccountInfo } from '@/shared/types/api';
+import { SUB_ENDPOINTS, API_GATEWAY_SUB } from '@/shared/api/endpoint';
 
 // Mock the apiClient
 vi.mock('@/shared/api/client', () => ({
@@ -14,40 +13,67 @@ describe('AccountService', () => {
     vi.clearAllMocks();
   });
 
-  it('getAccountInfo_SuccessfulFetch_ReturnsValidData', async () => {
-    const mockAccount: AccountInfo = {
-      login: 12345,
-      name: 'Test User',
-      server: 'Test Server',
-      balance: 10000,
-      equity: 10000,
-      margin: 0,
-      marginFree: 10000,
-      marginLevel: 100,
-      leverage: 100,
-      currency: 'USD',
-      profit: 0,
-    };
-    
-    vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockAccount, error: null });
+  describe('getProfile', () => {
+    it('getProfile_Successful_CallsApiClientWithCorrectEndpoint', async () => {
+      const mockProfiles = [
+        { mt5Id: 123, name: 'Test', server: 'Server', currency: 'USD', balance: 1000, leverage: 100, updatedAt: '2024-01-01' }
+      ];
+      vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockProfiles, error: null });
 
-    const result = await AccountService.getAccountInfo();
+      const result = await AccountService.getProfile();
 
-    // Adjusted for the new apiClient signature (4 arguments)
-    expect(apiClient).toHaveBeenCalledWith(ENDPOINTS.ACCOUNT, undefined, undefined, undefined);
-    expect(result.success).toBe(true);
-    expect(result.data).toEqual(mockAccount);
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.ACCOUNT_PROFILE,
+        undefined,
+        undefined,
+        API_GATEWAY_SUB
+      );
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockProfiles);
+    });
   });
 
-  it('getAccountInfo_OnNetworkError_ReturnsUnsuccessfulResponse', async () => {
-    vi.mocked(apiClient).mockRejectedValue(new Error('Network Error'));
+  describe('getFinance', () => {
+    it('getFinance_Successful_CallsApiClientWithCorrectEndpoint', async () => {
+      const mockFinance = {
+        user_id: 'user-1',
+        grossTradeProfit: 100,
+        totalDeposits: 500,
+        totalWithdrawals: 50,
+        totalProfitSharing: 10,
+        netProfit: 40,
+        totalTrades: 5,
+        equityCurve: [],
+        updated_at: '2024-01-01'
+      };
+      vi.mocked(apiClient).mockResolvedValue({ success: true, data: mockFinance, error: null });
 
-    const result = await AccountService.getAccountInfo();
+      const result = await AccountService.getFinance();
 
-    expect(result.success).toBe(false);
-    expect(result.error).toEqual({
-      code: 'FETCH_ERROR',
-      message: 'เกิดข้อผิดพลาดในการดึงข้อมูลบัญชี',
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.ACCOUNT_FINANCE,
+        undefined,
+        undefined,
+        API_GATEWAY_SUB
+      );
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockFinance);
+    });
+  });
+
+  describe('syncAccount', () => {
+    it('syncAccount_Successful_CallsApiClientWithPost', async () => {
+      vi.mocked(apiClient).mockResolvedValue({ success: true, data: { message: 'Sync started' }, error: null });
+
+      const result = await AccountService.syncAccount();
+
+      expect(apiClient).toHaveBeenCalledWith(
+        SUB_ENDPOINTS.ACCOUNT_SYNC,
+        expect.objectContaining({ method: 'POST' }),
+        undefined,
+        API_GATEWAY_SUB
+      );
+      expect(result.success).toBe(true);
     });
   });
 });

@@ -1,38 +1,45 @@
 "use client";
 
-import { Box, Grid, Alert } from "@mui/material";
-import { useAccountData } from "./hooks/use-account-data";
-import { useAccountTable } from "./hooks/use-account-table";
+import { Box, Grid } from "@mui/material";
+import { useAccountViewModel } from "./hooks/use-account-view-model";
 import { ProfileCard, FinancialSummary, AccountHeader } from "./components";
-import { BalanceChart, SymbolPerformance, DataTable } from "@/shared/ui";
-import { MOCK_BALANCE_DATA, MOCK_SYMBOL_STATS, MOCK_DEALS, MOCK_TOTALS } from "./constants/account.mock";
+import { BalanceChart, DataTable } from "@/shared/ui";
 
 export function AccountPage() {
     const {
+        // State & Loading
         loading,
-        error,
+        tableLoading,
         summary,
+        // Financials
         realBalance,
         grossTradeProfit,
         totalDeposits,
         totalWithdrawals,
         totalProfitSharing,
         netProfit,
-        formatCurrency,
+        growthPercent,
+        // Charts & Tables
+        chartData,
+        trades,
+        totalTrades,
+        tradesTotals,
+        typeOptions,
+        // Actions
         refreshData,
-    } = useAccountData();
-
-    const tableState = useAccountTable();
-
-    if (error) {
-        return (
-            <Box sx={{ p: 4 }}>
-                <Alert severity="error" variant="filled" sx={{ borderRadius: 3 }}>
-                    {error}
-                </Alert>
-            </Box>
-        );
-    }
+        formatCurrency,
+        // Table State
+        page,
+        setPage,
+        rowsPerPage,
+        setRowsPerPage,
+        typeFilter,
+        setTypeFilter,
+        startDate,
+        setStartDate,
+        endDate,
+        setEndDate,
+    } = useAccountViewModel();
 
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, pb: 8 }}>
@@ -48,7 +55,7 @@ export function AccountPage() {
                         server={summary?.server ?? ""}
                         leverage={summary?.leverage ?? 0}
                         currency={summary?.currency ?? ""}
-                        sx={{ height: '100%' }}
+                        sx={{ height: "100%" }}
                     />
                 </Grid>
 
@@ -62,52 +69,44 @@ export function AccountPage() {
                         totalProfitSharing={totalProfitSharing}
                         netProfit={netProfit}
                         formatCurrency={formatCurrency}
-                        sx={{ height: '100%' }}
+                        sx={{ height: "100%" }}
                     />
                 </Grid>
 
-                {/* Row 2: Account Growth & Symbol Performance */}
-                <Grid size={{ xs: 12, md: 8 }}>
+                {/* Row 2: Account Growth */}
+                <Grid size={{ xs: 12 }}>
                     <BalanceChart
                         loading={loading}
-                        data={MOCK_BALANCE_DATA}
-                        currentBalance={realBalance || 13200}
-                        change={3200}
-                        changePercent={32}
-                    />
-                </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
-                    <SymbolPerformance
-                        loading={loading}
-                        stats={MOCK_SYMBOL_STATS}
-                        totalTrades={142}
+                        data={chartData}
+                        currentBalance={realBalance}
+                        change={netProfit}
+                        changePercent={growthPercent}
                     />
                 </Grid>
 
                 {/* Row 3: Trade History Table */}
                 <Grid size={{ xs: 12 }}>
                     <DataTable
-                        loading={loading}
-                        deals={MOCK_DEALS}
-                        totals={MOCK_TOTALS}
-                        sortField="closeTime"
+                        variant="compact"
+                        loading={tableLoading}
+                        deals={trades}
+                        totals={tradesTotals}
+                        sortField="time"
                         sortDirection="desc"
                         onSort={() => {}}
-                        
-                        symbolFilter={tableState.symbolFilter}
-                        onSymbolFilterChange={tableState.setSymbolFilter}
-                        typeFilter={tableState.typeFilter}
-                        onTypeFilterChange={tableState.setTypeFilter}
-                        startDate={tableState.startDate}
-                        onStartDateChange={tableState.setStartDate}
-                        endDate={tableState.endDate}
-                        onEndDateChange={tableState.setEndDate}
-                        
-                        totalCount={MOCK_DEALS.length}
-                        page={tableState.page}
-                        rowsPerPage={tableState.rowsPerPage}
-                        onPageChange={tableState.setPage}
-                        onRowsPerPageChange={tableState.setRowsPerPage}
+                        hideSymbolFilter={true}
+                        typeFilter={typeFilter}
+                        onTypeFilterChange={setTypeFilter}
+                        typeOptions={typeOptions}
+                        startDate={startDate}
+                        onStartDateChange={setStartDate}
+                        endDate={endDate}
+                        onEndDateChange={setEndDate}
+                        totalCount={totalTrades}
+                        page={page}
+                        rowsPerPage={rowsPerPage}
+                        onPageChange={setPage}
+                        onRowsPerPageChange={setRowsPerPage}
                     />
                 </Grid>
             </Grid>

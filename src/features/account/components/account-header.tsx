@@ -1,31 +1,26 @@
-import { Box, Typography, Button } from "@mui/material";
-import RefreshIcon from "@mui/icons-material/Refresh";
+"use client";
+
+import { Box, Typography } from "@mui/material";
+import { AccountCircle as AccountCircleIcon } from "@mui/icons-material";
+import { SectionHeader } from "@/shared/ui";
 
 interface AccountHeaderProps {
-    onRefresh: () => void;
-    loading: boolean;
+    readonly onRefresh: () => void;
+    readonly loading: boolean;
 }
 
-export function AccountHeader({ onRefresh, loading }: AccountHeaderProps) {
+export function AccountHeader({ onRefresh, loading }: Readonly<AccountHeaderProps>) {
     return (
-        <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Box>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-                    Account & Profile
+        <SectionHeader
+            title="Account & Profile"
+            icon={<AccountCircleIcon sx={{ fontSize: 28 }} />}
+            onRefresh={onRefresh}
+            loading={loading}
+            actions={
+                <Typography variant="body2" sx={{ color: "text.secondary", mr: 2, display: { xs: 'none', sm: 'block' } }}>
+                    Manage your account settings and summaries
                 </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                    Manage your MT5 account settings and view financial summaries
-                </Typography>
-            </Box>
-            <Button
-                variant="contained"
-                startIcon={<RefreshIcon />}
-                onClick={onRefresh}
-                disabled={loading}
-                sx={{ borderRadius: 2 }}
-            >
-                Refresh
-            </Button>
-        </Box>
+            }
+        />
     );
 }

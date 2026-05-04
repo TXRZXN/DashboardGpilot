@@ -30,11 +30,16 @@ export const AnalyticsService = {
       if (params?.pageNumber) mappedParams.page = params.pageNumber;
       if (params?.pageSize) mappedParams.limit = params.pageSize;
 
+      const endpoint = serviceBase?.includes('/sub') ? SUB_ENDPOINTS.TRADES : ENDPOINTS.TRADES_GROUPED;
+      
+      // For BackendSub, remove unsupported parameters
+      if (serviceBase?.includes('/sub')) {
+        delete mappedParams.symbol;
+      }
+
       // Only pass params if not empty to match expected apiClient behavior in tests
       const finalParams = Object.keys(mappedParams).length > 0 ? mappedParams : undefined;
 
-      const endpoint = serviceBase?.includes('/sub') ? SUB_ENDPOINTS.TRADES : ENDPOINTS.TRADES_GROUPED;
-      
       return await apiClient<ServiceResponse<GroupedTradesResponse>>(
         endpoint,
         undefined,

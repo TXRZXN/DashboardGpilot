@@ -38,6 +38,8 @@ import dayjs from "dayjs";
 import type { GroupedDeal } from "@/shared/types/api";
 import type { SortField, SortDirection, HistoryTotals } from "@/features/history/hooks/use-history-data";
 
+export type DataTableVariant = "full" | "compact";
+
 interface DataTableProps {
   readonly loading?: boolean;
   readonly deals: readonly GroupedDeal[];
@@ -46,11 +48,16 @@ interface DataTableProps {
   readonly sortDirection: SortDirection;
   readonly onSort: (field: SortField) => void;
   
+  // Customization
+  readonly variant?: DataTableVariant;
+  
   // Advanced Filters
-  readonly symbolFilter: string;
-  readonly onSymbolFilterChange: (value: string) => void;
-  readonly typeFilter: "ALL" | "BUY" | "SELL";
-  readonly onTypeFilterChange: (value: "ALL" | "BUY" | "SELL") => void;
+  readonly hideSymbolFilter?: boolean;
+  readonly symbolFilter?: string;
+  readonly onSymbolFilterChange?: (value: string) => void;
+  readonly typeFilter: string;
+  readonly onTypeFilterChange: (value: any) => void;
+  readonly typeOptions?: { label: string; value: string }[];
   readonly startDate: string;
   readonly onStartDateChange: (value: string) => void;
   readonly endDate: string;
@@ -88,6 +95,13 @@ export function DataTable({
   rowsPerPage,
   onPageChange,
   onRowsPerPageChange,
+  variant = "full",
+  hideSymbolFilter = false,
+  typeOptions = [
+    { label: "All Types", value: "ALL" },
+    { label: "BUY", value: "BUY" },
+    { label: "SELL", value: "SELL" },
+  ]
 }: Readonly<DataTableProps>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -102,13 +116,13 @@ export function DataTable({
   };
 
   const handleResetFilters = () => {
-    onSymbolFilterChange("");
+    onSymbolFilterChange?.("");
     onTypeFilterChange("ALL");
     onStartDateChange("");
     onEndDateChange("");
   };
 
-  const formatDateTime = (isoString: string) => {
+  const formatDateTime = (isoString?: string) => {
     if (!isoString) return "-";
     try {
       const date = new Date(isoString);
@@ -129,13 +143,61 @@ export function DataTable({
   const pageTotals = useMemo(() => {
     return deals.reduce((acc, d) => ({
       totalTrades: acc.totalTrades + 1,
-      volume: acc.volume + d.volume,
-      grossProfit: acc.grossProfit + (d.netProfit > 0 ? d.netProfit : 0),
-      grossLoss: acc.grossLoss + (d.netProfit < 0 ? Math.abs(d.netProfit) : 0),
       netPL: acc.netPL + d.netProfit,
-      fees: acc.fees + (d.commission + d.swap + d.fee)
-    }), { totalTrades: 0, volume: 0, grossProfit: 0, grossLoss: 0, netPL: 0, fees: 0 });
+    }), { totalTrades: 0, netPL: 0 });
   }, [deals]);
+
+  const getDealProfitColor = (profit: number) => {
+    if (profit > 0) return "success.main";
+    if (profit < 0) return "error.main";
+    return "text.primary";
+  };
+
+  const renderDealTypeChip = (type: string) => {
+    let icon = <SwapHorizIcon sx={{ fontSize: 14, color: "text.secondary" }} />;
+    let bgcolor = "rgba(148, 163, 184, 0.2)";
+    let color = "text.secondary";
+    let label = type;
+
+    if (type === "Trade" || type === "Trades" || type === "BUY" || type === "SELL") {
+      icon = <ArrowUpwardIcon sx={{ fontSize: 14, color: `${theme.palette.success.main} !important` }} />;
+      bgcolor = "rgba(16, 185, 129, 0.2)";
+      color = "success.main";
+      label = (type === "Trades" || type === "Trade") ? "Trade" : type;
+    } else if (type === "Withdraw" || type === "Withdrawals") {
+      icon = <ArrowDownwardIcon sx={{ fontSize: 14, color: `${theme.palette.error.main} !important` }} />;
+      bgcolor = "rgba(239, 68, 68, 0.2)";
+      color = "error.main";
+      label = "Withdraw";
+    } else if (type === "Deposit" || type === "Deposits") {
+      icon = <ArrowUpwardIcon sx={{ fontSize: 14, color: `${theme.palette.info.main} !important` }} />;
+      bgcolor = "rgba(59, 130, 246, 0.2)";
+      color = "info.main";
+      label = "Deposit";
+    } else if (type === "ProfitShare" || type === "ProfitSharing") {
+      icon = <SwapHorizIcon sx={{ fontSize: 14, color: `${theme.palette.warning.main} !important` }} />;
+      bgcolor = "rgba(245, 158, 11, 0.2)";
+      color = "warning.main";
+      label = "Profit Share";
+    }
+
+    return (
+      <Chip
+        icon={icon}
+        label={label}
+        size="small"
+        sx={{
+          bgcolor,
+          color,
+          fontWeight: 600,
+          fontSize: "0.7rem",
+          textTransform: 'uppercase',
+          borderRadius: 1.5,
+          '& .MuiChip-label': { px: 1 }
+        }}
+      />
+    );
+  };
 
   return (
     <Card>
@@ -200,19 +262,21 @@ export function DataTable({
           >
             <Grid container spacing={2}>
               {/* Symbol Filter */}
-              <Grid size={{ xs: 12, sm: 4, md: 3 }}>
-                 <TextField
-                  fullWidth
-                  size="small"
-                  label="Symbol"
-                  placeholder="Type symbol..."
-                  value={symbolFilter}
-                  onChange={(e) => onSymbolFilterChange(e.target.value)}
-                />
-              </Grid>
+              {!hideSymbolFilter && (
+                <Grid size={{ xs: 12, sm: 4, md: 3 }}>
+                   <TextField
+                    fullWidth
+                    size="small"
+                    label="Symbol"
+                    placeholder="Type symbol..."
+                    value={symbolFilter}
+                    onChange={(e) => onSymbolFilterChange?.(e.target.value)}
+                  />
+                </Grid>
+              )}
 
               {/* Type Filter */}
-              <Grid size={{ xs: 12, sm: 4, md: 2 }}>
+              <Grid size={{ xs: 12, sm: 4, md: hideSymbolFilter ? 4 : 2 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Type</InputLabel>
                   <Select
@@ -220,9 +284,9 @@ export function DataTable({
                     label="Type"
                     onChange={(e) => onTypeFilterChange(e.target.value as any)}
                   >
-                    <MenuItem value="ALL">All Types</MenuItem>
-                    <MenuItem value="BUY">BUY</MenuItem>
-                    <MenuItem value="SELL">SELL</MenuItem>
+                    {typeOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -268,46 +332,50 @@ export function DataTable({
               <TableRow>
                 <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
                   <TableSortLabel
-                    active={sortField === "closeTime"}
-                    direction={sortField === "closeTime" ? sortDirection : "asc"}
-                    onClick={() => onSort("closeTime")}
+                    active={sortField === "time" || sortField === "closeTime"}
+                    direction={(sortField === "time" || sortField === "closeTime") ? sortDirection : "asc"}
+                    onClick={() => onSort(variant === "compact" ? "time" : "closeTime")}
                   >
                     Time
                   </TableSortLabel>
                 </TableCell>
+
+                {variant === "full" && (
+                  <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
+                    <TableSortLabel
+                      active={sortField === "symbol"}
+                      direction={sortField === "symbol" ? sortDirection : "asc"}
+                      onClick={() => onSort("symbol")}
+                    >
+                      Symbol
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+
                 <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
-                  <TableSortLabel
-                    active={sortField === "symbol"}
-                    direction={sortField === "symbol" ? sortDirection : "asc"}
-                    onClick={() => onSort("symbol")}
-                  >
-                    Symbol
-                  </TableSortLabel>
+                  Type
                 </TableCell>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
-                  <TableSortLabel
-                    active={sortField === "type"}
-                    direction={sortField === "type" ? sortDirection : "asc"}
-                    onClick={() => onSort("type")}
-                  >
-                    Type
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
-                  Open
-                </TableCell>
-                <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
-                  Close
-                </TableCell>
-                <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
-                  <TableSortLabel
-                    active={sortField === "volume"}
-                    direction={sortField === "volume" ? sortDirection : "asc"}
-                    onClick={() => onSort("volume")}
-                  >
-                    Lot
-                  </TableSortLabel>
-                </TableCell>
+
+                {variant === "full" && (
+                  <>
+                    <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
+                      Open
+                    </TableCell>
+                    <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
+                      Close
+                    </TableCell>
+                    <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
+                      <TableSortLabel
+                        active={sortField === "volume"}
+                        direction={sortField === "volume" ? sortDirection : "asc"}
+                        onClick={() => onSort("volume")}
+                      >
+                        Lot
+                      </TableSortLabel>
+                    </TableCell>
+                  </>
+                )}
+
                 <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
                   <TableSortLabel
                     active={sortField === "netProfit"}
@@ -317,89 +385,75 @@ export function DataTable({
                     Net Profit
                   </TableSortLabel>
                 </TableCell>
+
+                {variant === "compact" && (
+                  <TableCell align="right" sx={{ color: "text.secondary", fontWeight: 500, borderColor: theme.palette.divider }}>
+                    Balance
+                  </TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
-              {deals.map((deal) => {
-                const renderDealTypeChip = () => {
-                  let icon = <SwapHorizIcon sx={{ fontSize: 14, color: "text.secondary" }} />;
-                  let bgcolor = "rgba(148, 163, 184, 0.2)";
-                  let color = "text.secondary";
-
-                  if (deal.type === "BUY") {
-                    icon = <ArrowUpwardIcon sx={{ fontSize: 14, color: `${theme.palette.success.main} !important` }} />;
-                    bgcolor = "rgba(16, 185, 129, 0.2)";
-                    color = "success.main";
-                  } else if (deal.type === "SELL") {
-                    icon = <ArrowDownwardIcon sx={{ fontSize: 14, color: `${theme.palette.error.main} !important` }} />;
-                    bgcolor = "rgba(239, 68, 68, 0.2)";
-                    color = "error.main";
-                  }
-
-                  return (
-                    <Chip
-                      icon={icon}
-                      label={deal.type}
-                      size="small"
-                      sx={{
-                        bgcolor,
-                        color,
-                        fontWeight: 500,
-                        fontSize: "0.7rem",
-                      }}
-                    />
-                  );
-                };
-
-                const getDealProfitColor = () => {
-                  if (deal.netProfit > 0) return "success.main";
-                  if (deal.netProfit < 0) return "error.main";
-                  return "text.primary";
-                };
-
+              {deals.map((deal, idx) => {
                 return (
                   <TableRow
-                    key={deal.ticket}
+                    key={deal.ticket || `${deal.time}-${deal.netProfit}-${idx}`}
                     sx={{
                       "&:hover": { bgcolor: isDark ? "rgba(148, 163, 184, 0.05)" : "rgba(15, 23, 42, 0.02)" },
                     }}
                   >
                     <TableCell sx={{ fontFamily: '"Inter", monospace', fontSize: "0.75rem", color: "text.secondary", borderColor: theme.palette.divider }}>
-                      {formatDateTime(deal.closeTime)}
+                      {formatDateTime(variant === "compact" ? deal.time : deal.closeTime)}
                     </TableCell>
-                    <TableCell sx={{ fontFamily: '"Inter", monospace', fontWeight: 500, color: "text.primary", borderColor: theme.palette.divider }}>
-                      {deal.symbol || "-"}
-                    </TableCell>
+
+                    {variant === "full" && (
+                      <TableCell sx={{ fontFamily: '"Inter", monospace', fontWeight: 500, color: "text.primary", borderColor: theme.palette.divider }}>
+                        {deal.symbol || "-"}
+                      </TableCell>
+                    )}
+
                     <TableCell sx={{ borderColor: theme.palette.divider }}>
-                      {renderDealTypeChip()}
+                      {renderDealTypeChip(deal.type)}
                     </TableCell>
-                    <TableCell align="right" sx={{ fontFamily: '"Inter", monospace', fontSize: "0.8rem", borderColor: theme.palette.divider }}>
-                      {deal.openPrice.toFixed(5)}
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontFamily: '"Inter", monospace', fontSize: "0.8rem", borderColor: theme.palette.divider }}>
-                      {deal.closePrice.toFixed(5)}
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontFamily: '"Inter", monospace', color: "text.primary", borderColor: theme.palette.divider }}>
-                      {deal.volume.toFixed(2)}
-                    </TableCell>
+
+                    {variant === "full" && (
+                      <>
+                        <TableCell align="right" sx={{ fontFamily: '"Inter", monospace', fontSize: "0.8rem", borderColor: theme.palette.divider }}>
+                          {deal.openPrice?.toFixed(5) ?? "-"}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontFamily: '"Inter", monospace', fontSize: "0.8rem", borderColor: theme.palette.divider }}>
+                          {deal.closePrice?.toFixed(5) ?? "-"}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontFamily: '"Inter", monospace', color: "text.primary", borderColor: theme.palette.divider }}>
+                          {deal.volume?.toFixed(2) ?? "0.00"}
+                        </TableCell>
+                      </>
+                    )}
+
                     <TableCell
                       align="right"
                       sx={{
                         fontFamily: '"Inter", monospace',
-                        fontWeight: 500,
-                        color: getDealProfitColor(),
+                        fontWeight: 600,
+                        color: getDealProfitColor(deal.netProfit),
                         borderColor: theme.palette.divider,
                       }}
                     >
                       {deal.netProfit > 0 ? "+" : ""}${deal.netProfit.toFixed(2)}
                     </TableCell>
+
+                    {variant === "compact" && (
+                      <TableCell align="right" sx={{ fontFamily: '"Inter", monospace', color: "text.primary", fontWeight: 500, borderColor: theme.palette.divider }}>
+                        ${deal.balance?.toFixed(2) ?? "0.00"}
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
               
               {deals.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={variant === "compact" ? 4 : 7} align="center" sx={{ py: 4 }}>
                     <Typography variant="body2" color="text.secondary">
                       No trades found
                     </Typography>
@@ -424,7 +478,7 @@ export function DataTable({
 
         {/* Mobile Card View */}
         <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
-          {deals.map((deal) => {
+          {deals.map((deal, idx) => {
             const isPositive = deal.netProfit > 0;
             const isNegative = deal.netProfit < 0;
             
@@ -432,13 +486,9 @@ export function DataTable({
             if (isPositive) profitColor = "success.main";
             else if (isNegative) profitColor = "error.main";
 
-            let typeColor = "text.primary";
-            if (deal.type === 'BUY') typeColor = 'success.main';
-            else if (deal.type === 'SELL') typeColor = 'error.main';
-
             return (
               <Paper
-                key={deal.ticket}
+                key={deal.ticket || `${deal.time}-${deal.netProfit}-${idx}`}
                 elevation={0}
                 sx={{
                   p: 2,
@@ -449,59 +499,60 @@ export function DataTable({
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
                   <Box>
-                    <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: "text.primary" }}>
-                      {deal.symbol || "-"}
-                    </Typography>
+                    {variant === "full" && (
+                      <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: "text.primary" }}>
+                        {deal.symbol || "-"}
+                      </Typography>
+                    )}
+                    <Box sx={{ mb: 0.5 }}>{renderDealTypeChip(deal.type)}</Box>
                     <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: '"Inter", monospace' }}>
-                      {formatDateTime(deal.closeTime)}
+                      {formatDateTime(variant === "compact" ? deal.time : deal.closeTime)}
                     </Typography>
                   </Box>
-                  <Typography
-                    sx={{
-                      fontFamily: '"Inter", monospace',
-                      fontWeight: 700,
-                      fontSize: '1.1rem',
-                      color: profitColor
-                    }}
-                  >
-                    {isPositive ? "+" : ""}${deal.netProfit.toFixed(2)}
-                  </Typography>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography
+                      sx={{
+                        fontFamily: '"Inter", monospace',
+                        fontWeight: 700,
+                        fontSize: '1.1rem',
+                        color: profitColor
+                      }}
+                    >
+                      {isPositive ? "+" : ""}${deal.netProfit.toFixed(2)}
+                    </Typography>
+                    {variant === "compact" && (
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>
+                        Bal: ${deal.balance?.toFixed(2) ?? "0.00"}
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
                 
-                <Grid container spacing={1} sx={{ mb: 1 }}>
-                  <Grid size={4}>
-                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Type</Typography>
-                    <Typography variant="body2" sx={{ 
-                      fontWeight: 600, 
-                      color: typeColor 
-                    }}>
-                      {deal.type}
-                    </Typography>
-                  </Grid>
-                  <Grid size={4}>
-                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Lot</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{deal.volume.toFixed(2)}</Typography>
-                  </Grid>
-                  <Grid size={4} sx={{ textAlign: 'right' }}>
-                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Symbol</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{deal.symbol || "-"}</Typography>
-                  </Grid>
-                </Grid>
+                {variant === "full" && (
+                  <>
+                    <Grid container spacing={1} sx={{ mb: 1 }}>
+                      <Grid size={4}>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Lot</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{deal.volume?.toFixed(2) ?? "0.00"}</Typography>
+                      </Grid>
+                    </Grid>
 
-                <Grid container spacing={1}>
-                  <Grid size={4}>
-                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Open</Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{deal.openPrice.toFixed(5)}</Typography>
-                  </Grid>
-                  <Grid size={4}>
-                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Close</Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{deal.closePrice.toFixed(5)}</Typography>
-                  </Grid>
-                  <Grid size={4} sx={{ textAlign: 'right' }}>
-                    <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Ticket</Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>#{deal.ticket}</Typography>
-                  </Grid>
-                </Grid>
+                    <Grid container spacing={1}>
+                      <Grid size={4}>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Open</Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{deal.openPrice?.toFixed(5) ?? "-"}</Typography>
+                      </Grid>
+                      <Grid size={4}>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Close</Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{deal.closePrice?.toFixed(5) ?? "-"}</Typography>
+                      </Grid>
+                      <Grid size={4} sx={{ textAlign: 'right' }}>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: 'block' }}>Ticket</Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>#{deal.ticket}</Typography>
+                      </Grid>
+                    </Grid>
+                  </>
+                )}
               </Paper>
             );
           })}
@@ -536,91 +587,71 @@ export function DataTable({
           {/* Header Labels (Desktop Only) */}
           <Box sx={{ 
             display: { xs: 'none', md: 'grid' }, 
-            gridTemplateColumns: '1.2fr repeat(6, 1fr)',
+            gridTemplateColumns: '1.2fr repeat(2, 1fr)',
             bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
             borderBottom: `1px solid ${theme.palette.divider}`,
             p: 1.5
           }}>
             <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>GROUP</Typography>
             <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textAlign: 'right' }}>Total Trades</Typography>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textAlign: 'right' }}>Total Volume</Typography>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textAlign: 'right' }}>Gross Profit</Typography>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textAlign: 'right' }}>Gross Loss</Typography>
             <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textAlign: 'right' }}>Net P/L</Typography>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textAlign: 'right' }}>Fees/Comm</Typography>
           </Box>
-
+ 
           {/* PAGE Row */}
           <Box sx={{ 
             display: { xs: 'flex', md: 'grid' }, 
             flexDirection: 'column',
-            gridTemplateColumns: '1.2fr repeat(6, 1fr)',
+            gridTemplateColumns: '1.2fr repeat(2, 1fr)',
             p: 1.5,
             borderBottom: `1px solid ${theme.palette.divider}`,
             bgcolor: isDark ? 'transparent' : '#fff'
           }}>
             <Typography variant="body2" sx={{ fontWeight: 700, mb: { xs: 1, md: 0 } }}>PAGE TOTAL</Typography>
-            {[
-              { label: 'Trades', value: pageTotals.totalTrades, color: 'text.primary' },
-              { label: 'Volume', value: pageTotals.volume.toFixed(2), color: 'text.primary' },
-              { label: 'Gross Prof.', value: `+$${pageTotals.grossProfit.toFixed(2)}`, color: 'success.main' },
-              { label: 'Gross Loss', value: `-$${pageTotals.grossLoss.toFixed(2)}`, color: 'error.main' },
-              { label: 'Net P/L', value: `${pageTotals.netPL >= 0 ? '+' : ''}$${pageTotals.netPL.toFixed(2)}`, color: pageTotals.netPL >= 0 ? 'success.main' : 'error.main', bold: true },
-              { label: 'Fees', value: `$${pageTotals.fees.toFixed(2)}`, color: 'text.secondary' },
-            ].map((m, idx) => (
-              <Box key={m.label} sx={{ 
-                display: 'flex', 
-                justifyContent: { xs: 'space-between', md: 'flex-end' }, 
-                alignItems: 'center',
-                mb: { xs: 0.5, md: 0 } 
+            <Box sx={{ display: 'flex', justifyContent: { xs: 'space-between', md: 'flex-end' }, alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ display: { md: 'none' }, color: 'text.secondary' }}>Trades</Typography>
+              <Typography variant="body2" sx={{ textAlign: 'right', fontWeight: 500, fontFamily: '"Inter", monospace' }}>
+                {pageTotals.totalTrades}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: { xs: 'space-between', md: 'flex-end' }, alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ display: { md: 'none' }, color: 'text.secondary' }}>Net P/L</Typography>
+              <Typography variant="body2" sx={{ 
+                textAlign: 'right', 
+                fontWeight: 700, 
+                color: pageTotals.netPL >= 0 ? 'success.main' : 'error.main',
+                fontFamily: '"Inter", monospace',
               }}>
-                <Typography variant="caption" sx={{ display: { md: 'none' }, color: 'text.secondary' }}>{m.label}</Typography>
-                <Typography variant="body2" sx={{ 
-                  textAlign: 'right', 
-                  fontWeight: m.bold ? 700 : 500, 
-                  color: m.color,
-                  fontFamily: '"Inter", monospace',
-                }}>
-                  {m.value}
-                </Typography>
-              </Box>
-            ))}
+                {pageTotals.netPL >= 0 ? '+' : ''}${pageTotals.netPL.toFixed(2)}
+              </Typography>
+            </Box>
           </Box>
-
+ 
           {/* TOTAL Row */}
           <Box sx={{ 
             display: { xs: 'flex', md: 'grid' }, 
             flexDirection: 'column',
-            gridTemplateColumns: '1.2fr repeat(6, 1fr)',
+            gridTemplateColumns: '1.2fr repeat(2, 1fr)',
             p: 1.5,
             bgcolor: isDark ? "rgba(34, 211, 238, 0.08)" : "rgba(8, 145, 178, 0.05)",
           }}>
             <Typography variant="body2" sx={{ fontWeight: 700, mb: { xs: 1, md: 0 }, color: 'primary.main' }}>TOTAL SUMMARY</Typography>
-            {[
-              { label: 'Trades', value: totals.totalTrades, color: 'text.primary' },
-              { label: 'Volume', value: totals.volume.toFixed(2), color: 'text.primary' },
-              { label: 'Gross Prof.', value: `+$${totals.grossProfit.toFixed(2)}`, color: 'success.main' },
-              { label: 'Gross Loss', value: `-$${totals.grossLoss.toFixed(2)}`, color: 'error.main' },
-              { label: 'Net P/L', value: `${totals.netPL >= 0 ? '+' : ''}$${totals.netPL.toFixed(2)}`, color: totals.netPL >= 0 ? 'success.main' : 'error.main', bold: true },
-              { label: 'Fees', value: `$${(totals.commission + totals.swap + (totals as any).fee || 0).toFixed(2)}`, color: 'text.secondary' },
-            ].map((m, idx) => (
-              <Box key={m.label} sx={{ 
-                display: 'flex', 
-                justifyContent: { xs: 'space-between', md: 'flex-end' }, 
-                alignItems: 'center',
-                mb: { xs: 0.5, md: 0 } 
+            <Box sx={{ display: 'flex', justifyContent: { xs: 'space-between', md: 'flex-end' }, alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ display: { md: 'none' }, color: 'text.secondary' }}>Trades</Typography>
+              <Typography variant="body2" sx={{ textAlign: 'right', fontWeight: 500, fontFamily: '"Inter", monospace' }}>
+                {totals.totalTrades}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: { xs: 'space-between', md: 'flex-end' }, alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ display: { md: 'none' }, color: 'text.secondary' }}>Net P/L</Typography>
+              <Typography variant="body2" sx={{ 
+                textAlign: 'right', 
+                fontWeight: 700, 
+                color: totals.netPL >= 0 ? 'success.main' : 'error.main',
+                fontFamily: '"Inter", monospace',
               }}>
-                <Typography variant="caption" sx={{ display: { md: 'none' }, color: 'text.secondary' }}>{m.label}</Typography>
-                <Typography variant="body2" sx={{ 
-                  textAlign: 'right', 
-                  fontWeight: m.bold ? 700 : 500, 
-                  color: m.color,
-                  fontFamily: '"Inter", monospace',
-                }}>
-                  {m.value}
-                </Typography>
-              </Box>
-            ))}
+                {totals.netPL >= 0 ? '+' : ''}${totals.netPL.toFixed(2)}
+              </Typography>
+            </Box>
           </Box>
         </Paper>
       </CardContent>

@@ -1,55 +1,90 @@
 import { apiClient } from '@/shared/api/client';
-import { ApiError } from '@/shared/api/api-error';
-import { ENDPOINTS } from '@/shared/api/endpoint';
+import { SUB_ENDPOINTS, API_GATEWAY_SUB } from '@/shared/api/endpoint';
 import { createLogger } from '@/shared/utils/logger';
-import type { AccountInfo, AccountSummary, ServiceResponse } from '@/shared/types/api';
+import type { 
+  ServiceResponse, 
+  AccountProfile, 
+  AccountFinance 
+} from '@/shared/types/api';
 
 const logger = createLogger('AccountService');
 
 /**
- * Service สำหรับจัดการข้อมูลบัญชี MT5
+ * Service สำหรับจัดการข้อมูลบัญชีและสถิติจาก Backend-Sub
  */
 export const AccountService = {
   /**
-   * ดึงข้อมูลบัญชีล่าสุด
+   * ดึงข้อมูลสรุปรายพอร์ตทั้งหมดที่ผู้ใช้ถือครอง
    */
-  getAccountInfo: async (serviceBase?: string): Promise<ServiceResponse<AccountInfo>> => {
+  getProfile: async (): Promise<ServiceResponse<AccountProfile[]>> => {
     try {
-      logger.info('Fetching account info', { serviceBase });
+      logger.info('Fetching account profiles from Backend-Sub');
       
-      // apiClient คืนค่าส่วนที่ Backend ส่งมา (ซึ่งควรเป็น ServiceResponse ตามมาตรฐาน API Contract)
-      const response = await apiClient<ServiceResponse<AccountInfo>>(ENDPOINTS.ACCOUNT, undefined, undefined, serviceBase);
-      
+      const response = await apiClient<ServiceResponse<AccountProfile[]>>(
+        SUB_ENDPOINTS.ACCOUNT_PROFILE,
+        undefined,
+        undefined,
+        API_GATEWAY_SUB
+      );
+
       return response;
-    } catch (e: unknown) {
-      const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึงข้อมูลบัญชี';
-      logger.error('Failed to fetch account info', e instanceof Error ? e : String(e));
-      
+    } catch (e) {
+      logger.error('Failed to fetch account profile', e instanceof Error ? e : String(e));
       return {
         success: false,
         data: null,
-        error: { code: 'FETCH_ERROR', message: errorMsg },
+        error: { code: 'FETCH_ERROR', message: 'ไม่สามารถดึงข้อมูลโปรไฟล์บัญชีได้' }
       };
     }
   },
 
   /**
-   * ดึงข้อมูลสรุปสำหรับการเงิน (Lightweight Account Summary)
+   * ดึงข้อมูลการเงินและสถิติภาพรวม (Finance, Equity Curve)
    */
-  getAccountSummary: async (serviceBase?: string): Promise<ServiceResponse<AccountSummary>> => {
+  getFinance: async (): Promise<ServiceResponse<AccountFinance>> => {
     try {
-      logger.info('Fetching account summary', { serviceBase });
-      const response = await apiClient<ServiceResponse<AccountSummary>>(ENDPOINTS.ACCOUNT_SUMMARY, undefined, undefined, serviceBase);
-      return response;
-    } catch (e: unknown) {
-      const errorMsg = e instanceof ApiError ? e.message : 'เกิดข้อผิดพลาดในการดึงข้อมูลสรุปบัญชี';
-      logger.error('Failed to fetch account summary', e instanceof Error ? e : String(e));
+      logger.info('Fetching account finance from Backend-Sub');
       
+      const response = await apiClient<ServiceResponse<AccountFinance>>(
+        SUB_ENDPOINTS.ACCOUNT_FINANCE,
+        undefined,
+        undefined,
+        API_GATEWAY_SUB
+      );
+
+      return response;
+    } catch (e) {
+      logger.error('Failed to fetch account finance', e instanceof Error ? e : String(e));
       return {
         success: false,
         data: null,
-        error: { code: 'FETCH_ERROR', message: errorMsg },
+        error: { code: 'FETCH_ERROR', message: 'ไม่สามารถดึงข้อมูลสถิติการเงินได้' }
       };
     }
   },
+
+  /**
+   * สั่งซิงค์ข้อมูลการเทรดด้วยตัวเอง (Manual Sync)
+   */
+  syncAccount: async (): Promise<ServiceResponse<{ message: string }>> => {
+    try {
+      logger.info('Requesting manual account sync');
+      
+      const response = await apiClient<ServiceResponse<{ message: string }>>(
+        SUB_ENDPOINTS.ACCOUNT_SYNC,
+        { method: 'POST' },
+        undefined,
+        API_GATEWAY_SUB
+      );
+
+      return response;
+    } catch (e) {
+      logger.error('Manual sync failed', e instanceof Error ? e : String(e));
+      return {
+        success: false,
+        data: null,
+        error: { code: 'SYNC_ERROR', message: 'การซิงค์ข้อมูลล้มเหลว' }
+      };
+    }
+  }
 };
