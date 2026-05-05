@@ -105,7 +105,7 @@ export function useHistoryData(serviceBase?: string) {
       volume: data.totalVolume,
       grossProfit: data.grossProfit,
       grossLoss: data.grossLoss,
-      netPL: data.netProfit,
+      netPL: data.totalPL ?? (data as any)?.["totalP/L"] ?? data.netProfit ?? 0,
       commission: 0,
       swap: 0,
       fee: data.fee,

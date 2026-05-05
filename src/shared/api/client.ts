@@ -60,7 +60,9 @@ const executeSingleFetch = async <T>(
     if (!response.ok) {
       // 401 Unauthorized is handled specially for token refresh
       if (response.status === 401) {
-        return { success: false, retryable: false, errorStatus: 401 };
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error || errorData.detail || response.statusText;
+        return { success: false, retryable: false, errorStatus: 401, error: errorMsg };
       }
 
       const errorData = await response.json().catch(() => ({}));
@@ -104,6 +106,7 @@ const performFetchWithRetry = async <T>(
 ): Promise<T> => {
   let attempt = 0;
   let lastError: any;
+  let lastStatus: number = 500;
 
   while (attempt < RETRY_CONFIG.maxAttempts) {
     attempt++;
@@ -129,21 +132,27 @@ const performFetchWithRetry = async <T>(
         }
 
         const isRefreshed = await refreshPromise;
+        const defaultMsg = 'Session expired. Please login again.';
+        const errorMsg = typeof result.error === 'string' ? result.error : defaultMsg;
+        
         if (isRefreshed) {
            logger.info('Token refreshed. Retrying original request...', { traceId });
            // Retry exactly once with the new token
            return performFetchWithRetry<T>(url, options, traceId, endpoint, skipInternalHeaders, true);
         } else {
-           throw new ApiError('Session expired. Please login again.', 401);
+           throw new ApiError(errorMsg, 401);
         }
       } catch (err) {
         logger.error('Failed to refresh token during request', err instanceof Error ? err : String(err), { traceId });
-        throw new ApiError('Session expired. Please login again.', 401);
+        const defaultMsg = 'Session expired. Please login again.';
+        const errorMsg = typeof result.error === 'string' ? result.error : defaultMsg;
+        throw new ApiError(errorMsg, 401);
       }
     }
 
     if (result.retryable) {
       lastError = result.errorStatus || result.error;
+      lastStatus = result.errorStatus || 500;
       const delay = RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt - 1);
       logger.warn(`Retryable error occurring. Retrying in ${delay}ms...`, { traceId, attempt });
       await sleep(delay);
@@ -151,7 +160,8 @@ const performFetchWithRetry = async <T>(
     }
     
     // Non-retryable error
-    lastError = result.errorStatus || result.error || 'Unknown Error';
+    lastError = result.error || result.errorStatus || 'Unknown Error';
+    lastStatus = result.errorStatus || 500;
     break;
   }
 
@@ -162,7 +172,7 @@ const performFetchWithRetry = async <T>(
 
   const finalError = lastError instanceof Error ? lastError : new Error(String(lastError));
   logger.error(`Network Error: ${endpoint}`, finalError, { traceId });
-  throw new ApiError(finalError.message, typeof lastError === 'number' ? lastError : 500);
+  throw new ApiError(finalError.message, lastStatus);
 };
 
 /**

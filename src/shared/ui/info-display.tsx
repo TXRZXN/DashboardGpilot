@@ -45,6 +45,7 @@ export function StatBox({
             </Typography>
             <Typography
                 variant="body1"
+                component="div"
                 sx={{
                     fontWeight: 700,
                     color: color || "text.primary",
@@ -81,7 +82,7 @@ export function InfoGrid({ items, loading = false, columns = { xs: 6 }, sx }: Re
                         >
                             {item.label}
                         </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        <Typography variant="body2" component="div" sx={{ fontWeight: 600 }}>
                             {loading ? <Skeleton width="80%" /> : item.value}
                         </Typography>
                     </Box>

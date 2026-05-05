@@ -56,7 +56,7 @@ export const AuthService = {
       const response = await apiClient<ServiceResponse<RegistrationResponse>>(SUB_ENDPOINTS.AUTH_REGISTER, {
         method: 'POST',
         body: JSON.stringify(requestData),
-      }, undefined, API_GATEWAY_SUB);
+      }, undefined, API_GATEWAY_SUB, true);
       
       // จัดการกับ ServiceResponse (ห่อตามมาตรฐาน)
       if (!response.success || !response.data) {
@@ -110,7 +110,7 @@ export const AuthService = {
       const response = await apiClient<ServiceResponse<LoginResponse>>(SUB_ENDPOINTS.AUTH_LOGIN, {
         method: 'POST',
         body: JSON.stringify(requestBody),
-      }, undefined, API_GATEWAY_SUB);
+      }, undefined, API_GATEWAY_SUB, true);
 
       if (!response.success || !response.data) {
         return response;
@@ -247,7 +247,7 @@ export const AuthService = {
       const response = await apiClient<ServiceResponse<LoginResponse>>(SUB_ENDPOINTS.AUTH_REFRESH, {
         method: 'POST',
         body: JSON.stringify({ refreshToken: refreshToken }),
-      }, undefined, API_GATEWAY_SUB);
+      }, undefined, API_GATEWAY_SUB, true);
 
       if (!response.success || !response.data) {
         // ถ้า Refresh ไม่ผ่าน ให้ล้าง Token และ Logout

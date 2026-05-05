@@ -126,7 +126,7 @@ export function useAccountData(tableParams?: TradeRequest) {
       volume: tradesData?.totalVolume || 0,
       grossProfit: tradesData?.grossProfit || 0,
       grossLoss: tradesData?.grossLoss || 0,
-      netPL: tradesData?.netProfit || 0,
+      netPL: tradesData?.totalPL ?? (tradesData as any)?.["totalP/L"] ?? tradesData?.netProfit ?? 0,
       commission: 0,
       swap: 0,
       fee: tradesData?.fee || 0,
