@@ -27,7 +27,7 @@ export default async function Page() {
         undefined,
         API_GATEWAY_SUB
       ),
-      apiServer<ServiceResponse<GroupedTradesResponse>>(
+      apiServer<ServiceResponse<GroupedTradesResponse[]>>(
         SUB_ENDPOINTS.ACCOUNT_TRADES,
         { cache: 'no-store' },
         { page: 1, limit: 10 },
@@ -36,9 +36,9 @@ export default async function Page() {
     ]);
 
     initialData = {
-      profile: profileRes.success && profileRes.data ? profileRes.data[0] : null,
-      finance: financeRes.success && financeRes.data ? financeRes.data[0] : null,
-      tradesData: tradesRes.success ? (Array.isArray(tradesRes.data) ? tradesRes.data[0] : tradesRes.data) : null,
+      profile: profileRes.success ? profileRes.data : null,
+      finance: financeRes.success ? financeRes.data : null,
+      tradesData: tradesRes.success ? tradesRes.data : null,
     };
   } catch (error) {
     console.error("Failed to fetch account initial data on server:", error);

@@ -2,14 +2,14 @@
 
 import { Box, Grid } from "@mui/material";
 import { useAccountViewModel } from "./hooks/use-account-view-model";
-import { ProfileCard, FinancialSummary, AccountHeader } from "./components";
+import { ProfileCard, FinancialSummary, AccountHeader, AccountTabs } from "./components";
 import { BalanceChart, DataTable } from "@/shared/ui";
 import type { AccountProfile, AccountFinance, GroupedTradesResponse } from "@/shared/types/api";
 
 export interface AccountInitialData {
-    profile?: AccountProfile | null;
-    finance?: AccountFinance | null;
-    tradesData?: GroupedTradesResponse | null;
+    profile?: AccountProfile | AccountProfile[] | null;
+    finance?: AccountFinance | AccountFinance[] | null;
+    tradesData?: GroupedTradesResponse | GroupedTradesResponse[] | null;
 }
 
 interface AccountPageProps {
@@ -39,6 +39,10 @@ export function AccountPage({ initialData }: AccountPageProps) {
         // Actions
         refreshData,
         formatCurrency,
+        // Multi-Port
+        activePortIndex,
+        setActivePortIndex,
+        profiles,
         // Table State
         page,
         setPage,
@@ -55,6 +59,12 @@ export function AccountPage({ initialData }: AccountPageProps) {
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, pb: 8 }}>
             <AccountHeader onRefresh={refreshData} loading={loading} />
+
+            <AccountTabs 
+                activeTab={activePortIndex} 
+                onChange={(_, val) => setActivePortIndex(val)} 
+                ports={profiles}
+            />
 
             <Grid container spacing={3} alignItems="stretch">
                 {/* Row 1: Profile & Financial Summary */}

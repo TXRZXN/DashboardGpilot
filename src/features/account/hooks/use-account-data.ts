@@ -14,16 +14,27 @@ import type { AccountInitialData } from "../AccountPage";
 export function useAccountData(tableParams?: TradeRequest, initialData?: AccountInitialData) {
   const { isHealthy } = useApiHealth();
 
-  const [profile, setProfile] = useState<AccountProfile | null>(initialData?.profile || null);
-  const [finance, setFinance] = useState<AccountFinance | null>(initialData?.finance || null);
-  const [tradesData, setTradesData] = useState<GroupedTradesResponse | null>(initialData?.tradesData || null);
+  const [profiles, setProfiles] = useState<AccountProfile[]>(() => {
+    if (!initialData?.profile) return [];
+    return Array.isArray(initialData.profile) ? initialData.profile : [initialData.profile];
+  });
+  const [finances, setFinances] = useState<AccountFinance[]>(() => {
+    if (!initialData?.finance) return [];
+    return Array.isArray(initialData.finance) ? initialData.finance : [initialData.finance];
+  });
+  const [allTradesData, setAllTradesData] = useState<GroupedTradesResponse[]>(() => {
+    if (!initialData?.tradesData) return [];
+    return Array.isArray(initialData.tradesData) ? initialData.tradesData : [initialData.tradesData];
+  });
+  
+  const [activePortIndex, setActivePortIndex] = useState(0);
   
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // If initialData is provided, mark as fetched
-  const isInitialFetched = useRef(!!initialData);
+  const isInitialFetched = useRef(!!initialData && Object.keys(initialData).length > 0);
 
   // 1. Fetch Profile & Finance (Initial or Refresh)
   const fetchAccountInfo = useCallback(async () => {
@@ -36,11 +47,13 @@ export function useAccountData(tableParams?: TradeRequest, initialData?: Account
         AccountService.getFinance(),
       ]);
 
-      if (profileRes.success && profileRes.data && profileRes.data.length > 0) {
-        setProfile(profileRes.data[0]);
+      if (profileRes.success && profileRes.data) {
+        const profileList = Array.isArray(profileRes.data) ? profileRes.data : [profileRes.data];
+        setProfiles(profileList);
       }
-      if (financeRes.success && financeRes.data && financeRes.data.length > 0) {
-        setFinance(financeRes.data[0]);
+      if (financeRes.success && financeRes.data) {
+        const financeList = Array.isArray(financeRes.data) ? financeRes.data : [financeRes.data];
+        setFinances(financeList);
       }
       
       if (!profileRes.success || !financeRes.success) {
@@ -69,9 +82,9 @@ export function useAccountData(tableParams?: TradeRequest, initialData?: Account
       }, API_GATEWAY_SUB);
 
       if (tradesRes.success && tradesRes.data) {
-        // Handle both single object (Main-API) and array (Sub-API) responses
-        const data = Array.isArray(tradesRes.data) ? tradesRes.data[0] : tradesRes.data;
-        setTradesData(data);
+        // Sub-API returns List of objects, each for one port
+        const dataList = Array.isArray(tradesRes.data) ? tradesRes.data : [tradesRes.data];
+        setAllTradesData(dataList);
       } else if (!tradesRes.success) {
         setError(tradesRes.error?.message || "Failed to fetch trades");
       }
@@ -95,6 +108,10 @@ export function useAccountData(tableParams?: TradeRequest, initialData?: Account
       fetchTrades();
     }
   }, [isHealthy, fetchTrades]);
+
+  const profile = profiles[activePortIndex] || null;
+  const finance = finances[activePortIndex] || null;
+  const tradesData = allTradesData[activePortIndex] || null;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -123,6 +140,9 @@ export function useAccountData(tableParams?: TradeRequest, initialData?: Account
     summary,
     profile,
     finance,
+    profiles, // Expose for tabs
+    activePortIndex,
+    setActivePortIndex,
     trades: tradesData?.paginated?.list || [],
     totalTrades: tradesData?.totalTrades || 0,
     tradesTotals: {
@@ -144,7 +164,18 @@ export function useAccountData(tableParams?: TradeRequest, initialData?: Account
     equityCurve: finance?.equityCurve || [],
     formatCurrency,
     refreshData: async () => {
-      await Promise.all([fetchAccountInfo(), fetchTrades()]);
+      setLoading(true);
+      try {
+        // 1. First trigger manual sync
+        await AccountService.syncAccount();
+        
+        // 2. Then fetch updated data in parallel
+        await Promise.all([fetchAccountInfo(), fetchTrades()]);
+      } catch (err) {
+        setError("Failed to sync and refresh data.");
+      } finally {
+        setLoading(false);
+      }
     },
   };
 }
